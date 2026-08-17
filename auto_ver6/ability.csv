@@ -1,0 +1,130 @@
+id,name,def,cd,mp_cost
+1,Slash,Deal [STR Base] physical damage to a single target.,1,
+2,Guard,Negate [CON Base] Physical damage taken for 1 round.,1,
+3,Concentrate,Gain +1 physical damage bonus for 6 rounds.,6,
+4,Rage,Gain [Rage] for 2 rounds.,1,
+5,Axe Throw,Deal [STR base] physical damage to a single target.,1,
+6,Axe Swing,Deal [STR base] physical to all enemies.,4,
+7,Jab,"Deal [STR base] Physical damage, inflict [Hel seal].",1,
+8,Ignition,On a single enemy convert [Hel seal] to [Burn] for 3 rounds.,1,
+9,Combust,"On a single enemy, consume [Hel seal] to deal [INT base] necrotic damage.",5,
+10,Slam,Deal [CON base] physical damage to a single enemy.,1,
+11,Organic Skin,Gain [Defense] for 3 rounds.,3,
+12,Latch,Inflict [Latch] on an enemy or ally.,5,
+13,Plant Heal,Heal [WIS base] to a single ally.,1,1
+14,Overgrowth,[Stun] a single enemy.,1,1
+15,Familiar,Summon a [Familiar],1,1
+16,Storm Totem,Summon [Storm totem] for 5 rounds.,6,
+17,Tempest Shift,Apply [Slow] on all enemies for 1 round.,1,
+18,Rain,Deal [WIS base] magic damage to all enemies.,2,
+19,Fast Forward,Grant a single ally [WIS base] mana.,1,
+20,Rewind,Rewind a single target to the previous round health value.,2,3
+21,Pause,[Stun] a single enemy for 1 round.,1,3
+22,Natural Protection,Grant an ally [Defense] for 1 round.,1,
+23,Spiritual Protection,Grant an ally [Defense+] for 3 rounds.,4,2
+24,Warding Light,"Remove [Invisibility] for enemies, and cleans [Blindness] for allies.",2,2
+25,Undead,Summon an [Undead] containing half of your health.,1,1
+26,Decay,Channel a blood field that will deal [CHA base] Magic damage to all enemies. MP per second.,1,1
+27,Plague,Apply [Dark Plague] on a single target for 3 rounds.,6,2
+28,Hex,Apply [Hex] on a single enemy.,1,1
+29,Hex Field,"Channel a hex field, enemies casting abilities will be inflected by [Hex]. MP per second.",1,1
+30,Curse Rupture,Detonate all [Hex] stacks on enemies to deal half [INT base] Magic damage multiplied by the amount of stacks.,3,
+31,Void Spawn,Summon a [Voidling],5,1
+32,Void Matter,"Replenish a summon, familiar, or construct_s HP by [CHA base]",1,2
+33,Guardian,Summon a [Void Guardian],10,
+34,Harvest,Deal half [CHA base] necrotic damage to all enemies.,1,3
+35,Death Mark,Inflict [Death Mark] on a single enemy for 3 rounds.,7,4
+36,Underworld,Remove all inflictions and debuffs on the caster.,4,
+37,Heal,Heal a single ally [CHA base].,1,1
+38,Divine Connection,Place [Faith] on a single ally for 3 rounds.,3,3
+39,Holy Spear,Deal [CHA base] holy damage to a single enemy.,1,1
+40,Fortune,Grant a single ally [Fortune].,1,1
+41,Misfortune,Grant a single enemy [Misfortune].,1,1
+42,Blessing,Grant an ally +1 on all stats for 2 rounds.,4,2
+43,Solar Beam,Deal [INT base] light damage to a single enemy.,1,1
+44,Reflect,Inflict [Mirror] at a single target for 4 rounds.,1,3
+45,Shun,[Stun] a single target.,1,1
+46,Surge,Deal [WIS base] dark damage to a single enemy.,1,1
+47,Chain Bind,"[Stun] a single enemy and another random enemy,.",2,3
+48,Ritual,[Stun] all enemies and deal half [WIS base] dark damage.,6,6
+49,Magic Missile,Deal [INT Base] magical damage to a single target.,1,1
+50,Mana Flux,Gain [Mana Flux] for 3 rounds.,6,2
+51,Hyper Flux,"Consume all MP, granting INT for each MP consumed for 2 rounds.",3,
+52,Pulse Fire,Deal [WIS base] magic damage to a single enemy.,1,1
+53,Tech Advancement,Grant an ally [Upgrade] for 1 round.,3,5
+54,Holo Shield,Grant [Magic Shield] for you or an ally for 2 rounds.,3,2
+55,Fireball,Deal [INT base] Fire damage.,1,1
+56,Ice Spike,Deal [INT base] Ice damage.,1,1
+57,Shatter,Deal [INT base] physical damage to all enemies.,2,3
+58,Destruction,Gain [Destruction].,1,1
+59,Serenity,Gain [Serenity].,1,1
+60,Obedience,Gain [Obedience].,1,1
+61,Arrow Shot,Fire an arrow to deal [DEX base] physical damage.,1,
+62,Arrow Infusion,Apply a chosen infliction on the next Arrow Shot.,1,2
+63,Headshot,Next Arrow Shot will crit.,6,
+64,Open Fire,Deal [STR base] physical damage to a single enemy.,1,1
+65,Deadeye,Gain 50% crit damage boost for 4 rounds.,3,2
+66,Riptide Shots,Deal x2 [STR base] physicam damage to a single enemy.,3,2
+67,Reshuffle,Reshuffle Deck Buff,1,1
+68,Card Toss,Deal [DEX base] physical damage to a single enemy.,1,1
+69,Quick Feet,Gain [Quick Feet] for 1 round.,3,2
+70,Shank,Deal [STR base] physical damage to a single target.,1,
+71,Bear Trap,[Stun] a single target for one round.,3,
+72,Hunters Mark,Apply [Hunter Mark] on a single target for 3 rounds.,3,
+73,Hide,Become invisible for 1 round.,1,
+74,Pickpocket,Deal [STR base] physical damage with a chance to receive gold.,1,
+75,Execute,"Deal [STR base] physical damage, executing enemies at or below 10% max health. Executing resets cooldown.",8,
+76,Fear,"Inflict [Fear], to a single enemy for 3 rounds.",3,2
+77,Dread,Inflict [Nightmare Strike] to a single enemy for 2 rounds.,1,1
+78,Terror,"Deal [STR base] physical damage, consuming all stacks of [Nightmare Strike].",8,4
+79,Fake Out,Summon a [Self Replica].,3,2
+80,Laughter,Deal half [DEX base] magic damage to all enemies.,1,1
+81,Jack in the Box,Inflic ta random Debuff/Infliction to all enemies.,8,4
+82,Melody,Grant a single ally +1 [STR] and +1 [INT].,1,
+83,Sound Wave,Grant all allies [Inspire] and enemies [Discourage].,3,2
+84,Reverb,Grant a single ally [Double Cast].,7,3
+85,Charm,Apply [Charm] to a single enemy for 2 rounds.,2,
+86,Submission,Inflict [Complete Submission] on a single target.,1,5
+87,Demand,Grant your familiar [Double Cast],6,1
+88,String,Inflict [Strung] on a single enemy.,1,1
+89,Pull,Deal [CHA base] magic damage to a single enemy. May convert [Strung] to [Stun].,1,4
+90,Control,Inflict [Puppeted] to a single enemy for 5 rounds.,7,4
+91,High Note,Deal half [CHA base] magic damage to a single enemy.,1,2
+92,Minor Note,Grant the party [Remedy] for 3 rounds.,4,6
+93,Major Note,Grant the party [Legato] for 3 rounds.,7,9
+94,Strike1,Deal [STR base] physical damage to a single enemy.,1,
+95,Parry,Grant [Parry].,3,
+96,Defend,Grant [Defense] for 1 round.,1,
+97,Punch,"Deal [STR base] physical damage, applying [Imbalance] for 1 round.",1,
+98,Kick,"Deal [STR base] physical damage, applying [Stun] for 1 round.",3,
+99,Guard1,Gain [Defense] for 2 rounds.,3,
+100,Bonk,"Deal half [WIS base] physical damage to a single enemy, gaining [Ki].",1,1
+101,Meditate,Convert [Ki] to [Regeneration].,1,2
+102,Ki Unlock,Convert [Ki] to [Bonk Boost].,1,1
+103,Orange,Heal [STR base] and cleanse [Poison].,3,
+104,Rally,Grant the party +1 STR and +1 DEX for 3 rounds.,3,
+105,Cannon,Summon a [Cannon].,1,
+106,Bash,Deal [CON base] physical damage to a single target.,1,
+107,Defensive Stance,Grant [Defense] for 2 rounds.,4,
+108,Slash1,Deal [STR base] physical damage to a single enemy.,1,
+109,Retribution,Deal half [CHA base] Strength damage to a single target.,1,1
+110,Redemption,Party gains [Regeneration] for 3 rounds.,3,
+111,Divine Smite,Deal [CHA base] holy damage to all enemies.,4,3
+112,Command,Grant target ally [Triumph] for 1 round.,1,
+113,Plunge,Deal 2x [STR base] physical damage to target enemy.,2,
+114,Guard Stance,Party gains [Defense] for 2 rounds.,4,
+115,Blade Surge,Deal half [DEX base] physical damage to target enemy.,1,1
+116,Sharp Rain,Deal half [DEX base] physical damage to all enemies.,1,2
+117,Dancing Blade,Summon a [Floating Blade],1,6
+118,Lost Spell,Replenish all party mana by half of [WIS base].,5,
+119,Portal,Target ally gains [Warp].,2,3
+120,Quotation,Deal [WIS base] magic damage to a single enemy.,1,1
+121,Doorbell,Gain [Defense+] for 3 rounds.,3,5
+122,Lock,Disable target [Doorway].,1,
+123,Unlock,Enable target [Doorway].,1,
+124,Window Clean,Target ally gains [Immunity] for 2 rounds.,6,2
+125,Spray Cleaner,Target gains [Poison] for 2 rounds.,2,3
+126,Sweep,Remove all debuffs and inflictions from target ally.,1,1
+127,Notes,Deal [WIS base] psychic damage to a single enemy.,1,2
+128,Bird Call,Summon [Bird Familiar].,6,5
+129,Passage,Target enemy gains [Passage] for 3 rounds.,3,3

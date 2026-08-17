@@ -2,7 +2,7 @@ CREATE TABLE class (
 	id SERIAL PRIMARY KEY,
 	name TEXT,
 	parent_id INT REFERENCES class(id) ON DELETE CASCADE,
-	UNIQUE(name)
+	UNIQUE (name)
 );
 
 CREATE TABLE stat (
@@ -37,42 +37,92 @@ CREATE TABLE passive (
 	UNIQUE (name)
 );
 
+CREATE TABLE tag (
+    id SERIAL PRIMARY KEY,
+    name TEXT
+);
+
 CREATE TABLE class_stat (
-	id SERIAL PRIMARY KEY,
 	class_id INT REFERENCES class(id) ON DELETE CASCADE,
 	stat_id INT REFERENCES stat(id) ON DELETE CASCADE,
 	type_id INT REFERENCES stat_type(id) ON DELETE CASCADE,
-	UNIQUE (class_id, stat_id, type_id)
+	PRIMARY KEY (class_id, stat_id)
 );
 
 CREATE TABLE class_ability (
-	id SERIAL PRIMARY KEY,
 	class_id INT REFERENCES class(id) ON DELETE CASCADE,
 	ability_id INT REFERENCES ability(id) ON DELETE CASCADE,
-	UNIQUE (class_id, ability_id)
+	PRIMARY KEY (class_id, ability_id)
 );
 
 CREATE TABLE class_passive (
-	id SERIAL PRIMARY KEY,
 	class_id INT REFERENCES class(id) ON DELETE CASCADE,
 	passive_id INT REFERENCES passive(id) ON DELETE CASCADE,
-	UNIQUE (class_id, passive_id)
+	PRIMARY KEY (class_id, passive_id)
 );
 
-CREATE TABLE player (
-	id SERIAL PRIMARY KEY,
-	name TEXT,
-	UNIQUE (name)
+CREATE TABLE ability_tag (
+    ability_id INT REFERENCES ability(id) ON DELETE CASCADE,
+    tag_id INT REFERENCES tag(id) ON DELETE CASCADE,
+    PRIMARY KEY (ability_id, tag_id)
 );
 
-create TABLE rpchar (
-	id SERIAL PRIMARY KEY,
-	name TEXT,
-	player_id INT REFERENCES player(id) ON DELETE CASCADE,
-	UNIQUE (name, player_id)
+CREATE TABLE passive_tag (
+    passive_id INT REFERENCES passive(id) ON DELETE CASCADE,
+    tag_id INT REFERENCES tag(id) ON DELETE CASCADE,
+    PRIMARY KEY (passive_id, tag_id)
 );
 
--- Class per ability
+CREATE FUNCTION add_class_stat(
+    for_class_id INT,
+    new_short CHAR(3),
+    new_stat_type INT
+) RETURNS void AS $$
+    BEGIN
+        INSERT INTO class_stat(class_id, stat_id, type_id) VALUES(for_class_id, (SELECT id FROM stat WHERE short = new_short), new_stat_type);
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE FUNCTION add_class_ability(
+    for_class_id INT,
+    new_name TEXT,
+    new_def TEXT,
+    new_cd INT,
+    new_mp_cost INT DEFAULT NULL,
+    tag_names text[] DEFAULT ARRAY[]::text[]
+) RETURNS INT AS $$
+    DECLARE
+        new_ability_id INT;
+        tag_name TEXT;
+    BEGIN
+        INSERT INTO ability(name, def, cd, mp_cost) VALUES (new_name, new_def, new_cd, new_mp_cost) RETURNING id INTO new_ability_id;
+        INSERT INTO class_ability(class_id, ability_id) VALUES (for_class_id, new_ability_id);
+        FOREACH tag_name IN ARRAY tag_names LOOP
+            INSERT INTO ability_tag(ability_id, tag_id) VALUES (new_ability_id, (SELECT id FROM tag WHERE name = tag_name));
+        END LOOP;
+        RETURN new_ability_id;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE FUNCTION add_class_passive(
+    for_class_id INT,
+    new_name TEXT,
+    new_def TEXT,
+    tag_names text[] DEFAULT ARRAY[]::text[]
+) RETURNS INT AS $$
+    DECLARE
+        new_passive_id INT;
+        tag_name TEXT;
+    BEGIN
+        INSERT INTO passive(name, def) VALUES (new_name, new_def) RETURNING id INTO new_passive_id;
+        INSERT INTO class_passive(class_id, passive_id) VALUES (for_class_id, new_passive_id);
+        FOREACH tag_name IN ARRAY tag_names LOOP
+            INSERT INTO passive_tag(passive_id, tag_id) VALUES (new_passive_id, (SELECT id FROM tag WHERE name = tag_name));
+        END LOOP;
+        RETURN new_passive_id;
+    END;
+$$ LANGUAGE plpgsql;
+
 CREATE VIEW v_ability_class AS SELECT
 	ability.id as ability_id,
 	string_agg(class.name, chr(10) ORDER BY class.name) AS list,
@@ -82,7 +132,6 @@ LEFT JOIN class_ability ON class_ability.ability_id = ability.id
 LEFT JOIN class ON class.id = class_ability.class_id
 GROUP BY ability.id;
 
--- Class per passive
 CREATE VIEW v_passive_class AS SELECT
 	passive.id as passive_id,
 	string_agg(class.name, chr(10) ORDER BY class.name) AS list,
@@ -92,7 +141,6 @@ LEFT JOIN class_passive ON class_passive.passive_id = passive.id
 LEFT JOIN class ON class.id = class_passive.class_id
 GROUP BY passive.id;
 
--- Child per class
 CREATE VIEW v_class_child AS SELECT
 	class.id AS parent_id,
 	string_agg(child.name, chr(10) ORDER BY child.id) AS list,
@@ -101,29 +149,26 @@ FROM class
 LEFT JOIN class AS child ON child.parent_id = class.id
 GROUP BY class.id;
 
--- Main stat per class
 CREATE VIEW v_class_stat_main AS SELECT
 	class_stat.class_id AS class_id,
-	string_agg(stat.short, chr(10) ORDER BY class_stat.id) AS list,
-	string_agg(stat.short, ', ' ORDER BY class_stat.id) AS inline
+	string_agg(stat.short, chr(10)) AS list,
+	string_agg(stat.short, ', ') AS inline
 FROM class_stat
 LEFT JOIN stat ON stat.id = class_stat.stat_id
 LEFT JOIN stat_type ON stat_type.id = class_stat.type_id
 WHERE stat_type.id = 1
 GROUP BY class_stat.class_id;
 
--- Other stat per class
 CREATE VIEW v_class_stat_other AS SELECT
 	class_stat.class_id AS class_id,
-	string_agg(stat.short || ' (' || stat_type.short || ')', chr(10) ORDER BY class_stat.type_id, class_stat.id) AS list,
-	string_agg(stat.short || ' (' || stat_type.short || ')', ', ' ORDER BY class_stat.type_id, class_stat.id) AS inline
+	string_agg(stat.short || ' (' || stat_type.short || ')', chr(10) ORDER BY class_stat.type_id) AS list,
+	string_agg(stat.short || ' (' || stat_type.short || ')', ', ' ORDER BY class_stat.type_id) AS inline
 FROM class_stat
 LEFT JOIN stat ON stat.id = class_stat.stat_id
 LEFT JOIN stat_type ON stat_type.id = class_stat.type_id
 WHERE stat_type.id > 1
 GROUP BY class_stat.class_id;
 
--- Ability per class
 CREATE VIEW v_class_ability AS SELECT
 	class_ability.class_id AS class_id,
 	string_agg(ability.name, chr(10) ORDER BY ability.cd, ability.id) AS list,
@@ -132,7 +177,6 @@ FROM class_ability
 LEFT JOIN ability ON ability.id = class_ability.ability_id
 GROUP BY class_ability.class_id;
 
--- Passive per class
 CREATE VIEW v_class_passive AS SELECT
 	class_passive.class_id AS class_id,
 	string_agg(passive.name, chr(10) ORDER BY passive.id) AS list,
@@ -141,7 +185,6 @@ FROM class_passive
 LEFT JOIN passive ON passive.id = class_passive.passive_id
 GROUP BY class_passive.class_id;
 
--- Ability wiki
 CREATE VIEW ability_wiki AS SELECT
 	ability.id,
 	ability.name,
@@ -153,7 +196,6 @@ FROM ability
 LEFT JOIN v_ability_class ON v_ability_class.ability_id = ability.id
 ORDER BY ability.name;
 
--- Passive wiki
 CREATE VIEW passive_wiki AS SELECT
 	passive.*,
 	v_passive_class.list AS classes
@@ -161,7 +203,6 @@ FROM passive
 LEFT JOIN v_passive_class ON v_passive_class.passive_id = passive.id
 ORDER BY passive.name;
 
--- Class wiki
 CREATE VIEW class_wiki AS SELECT
 	class.id as id,
 	class.name AS name,
