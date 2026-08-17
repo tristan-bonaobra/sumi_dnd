@@ -8,15 +8,41 @@ INSERT INTO stat(name, short) VALUES('Charisma', 'CHA');
 INSERT INTO stat_type(name, short) VALUES('Main', 'm');
 INSERT INTO stat_type(name, short) VALUES('Sub', 's');
 
-INSERT INTO tag(name) VALUES ('damage');
-INSERT INTO tag(name) VALUES ('cc');
-INSERT INTO tag(name) VALUES ('debuff');
-INSERT INTO tag(name) VALUES ('self_sustain');
-INSERT INTO tag(name) VALUES ('self_buff');
-INSERT INTO tag(name) VALUES ('self_cleanse');
-INSERT INTO tag(name) VALUES ('target_sustain');
+INSERT INTO tag(name) VALUES ('target_damage');
+INSERT INTO tag(name) VALUES ('target_cc');
 INSERT INTO tag(name) VALUES ('target_buff');
+INSERT INTO tag(name) VALUES ('target_debuff');
+INSERT INTO tag(name) VALUES ('target_sustain');
 INSERT INTO tag(name) VALUES ('target_cleanse');
+INSERT INTO tag(name) VALUES ('target_burn');
+
+INSERT INTO tag(name) VALUES ('multi_damage');
+INSERT INTO tag(name) VALUES ('multi_cc');
+INSERT INTO tag(name) VALUES ('multi_buff');
+INSERT INTO tag(name) VALUES ('multi_debuff');
+INSERT INTO tag(name) VALUES ('multi_sustain');
+INSERT INTO tag(name) VALUES ('multi_cleanse');
+INSERT INTO tag(name) VALUES ('multi_burn');
+
+INSERT INTO tag(name) VALUES ('self_damage');
+INSERT INTO tag(name) VALUES ('self_cc');
+INSERT INTO tag(name) VALUES ('self_buff');
+INSERT INTO tag(name) VALUES ('self_debuff');
+INSERT INTO tag(name) VALUES ('self_sustain');
+INSERT INTO tag(name) VALUES ('self_cleanse');
+INSERT INTO tag(name) VALUES ('self_burn');
+
+INSERT INTO tag(name) VALUES ('random_damage');
+INSERT INTO tag(name) VALUES ('random_cc');
+INSERT INTO tag(name) VALUES ('random_buff');
+INSERT INTO tag(name) VALUES ('random_debuff');
+INSERT INTO tag(name) VALUES ('random_sustain');
+INSERT INTO tag(name) VALUES ('random_cleanse');
+INSERT INTO tag(name) VALUES ('random_burn');
+
+INSERT INTO tag(name) VALUES ('revenge');
+INSERT INTO tag(name) VALUES ('summon');
+INSERT INTO tag(name) VALUES ('perception');
 
 DO $$
 DECLARE
@@ -27,11 +53,11 @@ BEGIN
     PERFORM add_class_stat(new_class_id, 'CON', 1);
     PERFORM add_class_stat(new_class_id, 'DEX', 2);
     PERFORM add_class_stat(new_class_id, 'WIS', 2);
-    PERFORM add_class_ability(new_class_id, 'Slash', 'Deal [STR Base] physical damage to a single target.', 1, NULL);
-    PERFORM add_class_ability(new_class_id, 'Guard', 'Negate [CON Base] Physical damage taken for 1 round.', 1, NULL);
-    PERFORM add_class_ability(new_class_id, 'Concentrate', 'Gain +1 physical damage bonus for 6 rounds.', 6, NULL);
-    PERFORM add_class_passive(new_class_id, 'Strength Buffer', '+1 STR.');
-    PERFORM add_class_passive(new_class_id, 'Broken Blade', 'At below 50% HP, gain +1 STR.');
+    PERFORM add_class_ability(new_class_id, 'Slash', 'Deal [STR Base] physical damage to a single target.', 1, NULL, ARRAY ['target_damage']);
+    PERFORM add_class_ability(new_class_id, 'Guard', 'Negate [CON Base] Physical damage taken for 1 round.', 1, NULL, ARRAY ['self_buff']);
+    PERFORM add_class_ability(new_class_id, 'Concentrate', 'Gain +1 physical damage bonus for 6 rounds.', 6, NULL, ARRAY ['self_buff']);
+    PERFORM add_class_passive(new_class_id, 'Strength Buffer', 'Gain +1 STR.', ARRAY ['self_buff']);
+    PERFORM add_class_passive(new_class_id, 'Broken Blade', 'While below 50% HP, gain +1 STR.', ARRAY ['self_buff', 'revenge']);
 END $$;
 
 DO $$
@@ -42,11 +68,11 @@ BEGIN
     PERFORM add_class_stat(new_class_id, 'STR', 1);
     PERFORM add_class_stat(new_class_id, 'DEX', 1);
     PERFORM add_class_stat(new_class_id, 'CON', 2);
-    PERFORM add_class_ability(new_class_id, 'Rage', 'Gain [Rage] for 2 rounds.', 1, NULL);
-    PERFORM add_class_ability(new_class_id, 'Axe Throw', 'Deal [STR base] physical damage to a single target.', 1, NULL);
-    PERFORM add_class_ability(new_class_id, 'Axe Swing', 'Deal [STR base] physical to all enemies.', 4, NULL);
-    PERFORM add_class_passive(new_class_id, 'Mediate', 'Taking damage with [Rage] grants a stack of [Mediate].');
-    PERFORM add_class_passive(new_class_id, 'Frustration', 'Increase crit damage by 50%.');
+    PERFORM add_class_ability(new_class_id, 'Rage', 'Gain [Rage] for 2 rounds.', 1, NULL, ARRAY ['self_buff']);
+    PERFORM add_class_ability(new_class_id, 'Axe Throw', 'Deal [STR base] physical damage to a single target.', 1, NULL, ARRAY ['target_damage']);
+    PERFORM add_class_ability(new_class_id, 'Axe Swing', 'Deal [STR base] physical to all enemies.', 4, NULL, ARRAY ['multi_damage']);
+    PERFORM add_class_passive(new_class_id, 'Mediate', 'Taking damage with [Rage] grants a stack of [Mediate].', ARRAY ['self_buff', 'revenge']);
+    PERFORM add_class_passive(new_class_id, 'Frustration', 'Increase crit damage by 50%.', ARRAY ['self_buff']);
 END $$;
 
 DO $$
@@ -57,11 +83,11 @@ BEGIN
     PERFORM add_class_stat(new_class_id, 'STR', 1);
     PERFORM add_class_stat(new_class_id, 'INT', 1);
     PERFORM add_class_stat(new_class_id, 'CON', 2);
-    PERFORM add_class_ability(new_class_id, 'Jab', 'Deal [STR base] Physical damage, inflict [Hel seal].', 1, NULL);
-    PERFORM add_class_ability(new_class_id, 'Ignition', 'On a single enemy convert [Hel seal] to [Burn] for 3 rounds.', 1, NULL);
-    PERFORM add_class_ability(new_class_id, 'Combust', 'On a single enemy, consume [Hel seal] to deal [INT base] necrotic damage.', 5, NULL);
-    PERFORM add_class_passive(new_class_id, 'Helish Aura', 'The party becomes immune to fire damage.');
-    PERFORM add_class_passive(new_class_id, 'HelSpawn', 'Gain +1 CON.');
+    PERFORM add_class_ability(new_class_id, 'Jab', 'Deal [STR base] Physical damage, inflict [Hel seal].', 1, NULL, ARRAY ['target_damage', 'target_debuff']);
+    PERFORM add_class_ability(new_class_id, 'Ignition', 'On a single enemy convert [Hel seal] to [Burn] for 3 rounds.', 1, NULL, ARRAY ['target_burn']);
+    PERFORM add_class_ability(new_class_id, 'Combust', 'On a single enemy, consume [Hel seal] to deal [INT base] necrotic damage.', 5, NULL, ARRAY ['target_damage']);
+    PERFORM add_class_passive(new_class_id, 'Helish Aura', 'The party becomes immune to fire damage.', ARRAY ['multi_cleanse']);
+    PERFORM add_class_passive(new_class_id, 'HelSpawn', 'Gain +1 CON.', ARRAY ['self_sustain']);
 END $$;
 
 DO $$
@@ -71,11 +97,11 @@ BEGIN
     INSERT INTO class(name, parent_id) VALUES('Symbiote', 1) RETURNING id INTO new_class_id;
     PERFORM add_class_stat(new_class_id, 'CON', 1);
     PERFORM add_class_stat(new_class_id, 'STR', 2);
-    PERFORM add_class_ability(new_class_id, 'Slam', 'Deal [CON base] physical damage to a single enemy.', 1, NULL);
-    PERFORM add_class_ability(new_class_id, 'Organic Skin', 'Gain [Defense] for 3 rounds.', 3, NULL);
-    PERFORM add_class_ability(new_class_id, 'Latch', 'Inflict [Latch] on an enemy or ally.', 5, NULL);
-    PERFORM add_class_passive(new_class_id, 'Self Regen', 'Gain permanent [Regeneration].');
-    PERFORM add_class_passive(new_class_id, 'Devour', 'Winning battles grants +1 CON permanently.');
+    PERFORM add_class_ability(new_class_id, 'Slam', 'Deal [CON base] physical damage to a single enemy.', 1, NULL, ARRAY ['target_damage']);
+    PERFORM add_class_ability(new_class_id, 'Organic Skin', 'Gain [Defense] for 3 rounds.', 3, NULL, ARRAY ['self_buff']);
+    PERFORM add_class_ability(new_class_id, 'Latch', 'Inflict [Latch] on target.', 5, NULL, ARRAY ['target_debuff']);
+    PERFORM add_class_passive(new_class_id, 'Self Regen', 'Gain [Regeneration].', ARRAY ['self_sustain']);
+    PERFORM add_class_passive(new_class_id, 'Devour', 'Winning battles gains +1 CON permanently.', ARRAY ['self_sustain']);
 END $$;
 
 DO $$
@@ -85,11 +111,11 @@ BEGIN
     INSERT INTO class(name) VALUES('Druid') RETURNING id INTO new_class_id;
     PERFORM add_class_stat(new_class_id, 'WIS', 1);
     PERFORM add_class_stat(new_class_id, 'CHA', 2);
-    PERFORM add_class_ability(new_class_id, 'Plant Heal', 'Heal [WIS base] to a single ally.', 1, 1);
-    PERFORM add_class_ability(new_class_id, 'Overgrowth', '[Stun] a single enemy.', 1, 1);
-    PERFORM add_class_ability(new_class_id, 'Familiar', 'Summon a [Familiar]', 1, 1);
-    PERFORM add_class_passive(new_class_id, 'Thorns', 'Casting spells inflict [Poison] on a random enemy for 2 rounds.');
-    PERFORM add_class_passive(new_class_id, 'Animal Tongue', 'Ability to speak to animals.');
+    PERFORM add_class_ability(new_class_id, 'Plant Heal', 'Heal [WIS base] to a single ally.', 1, 1, ARRAY ['target_sustain']);
+    PERFORM add_class_ability(new_class_id, 'Overgrowth', '[Stun] a single enemy.', 1, 1, ARRAY ['target_cc']);
+    PERFORM add_class_ability(new_class_id, 'Familiar', 'Summon a [Familiar].', 1, 1, ARRAY ['summon']);
+    PERFORM add_class_passive(new_class_id, 'Thorns', 'Casting spells inflict [Poison] on a random enemy for 2 rounds.', ARRAY ['random_burn']);
+    PERFORM add_class_passive(new_class_id, 'Animal Tongue', 'Ability to speak to animals.', ARRAY ['perception']);
 END $$;
 
 DO $$
@@ -100,11 +126,11 @@ BEGIN
     PERFORM add_class_stat(new_class_id, 'WIS', 1);
     PERFORM add_class_stat(new_class_id, 'INT', 1);
     PERFORM add_class_stat(new_class_id, 'DEX', 2);
-    PERFORM add_class_ability(new_class_id, 'Storm Totem', 'Summon [Storm totem] for 5 rounds.', 6, NULL);
-    PERFORM add_class_ability(new_class_id, 'Tempest Shift', 'Apply [Slow] on all enemies for 1 round.', 1, NULL);
-    PERFORM add_class_ability(new_class_id, 'Rain', 'Deal [WIS base] magic damage to all enemies.', 2, NULL);
-    PERFORM add_class_passive(new_class_id, 'Mending Spirit', 'Casting spells applies [Regeneration] to a random ally.');
-    PERFORM add_class_passive(new_class_id, 'Warding', 'Gain 1+ warding efficiency.');
+    PERFORM add_class_ability(new_class_id, 'Storm Totem', 'Summon [Storm totem] for 5 rounds.', 6, NULL, ARRAY ['summon']);
+    PERFORM add_class_ability(new_class_id, 'Tempest Shift', 'Apply [Slow] on all enemies for 1 round.', 1, NULL, ARRAY ['multi_debuff']);
+    PERFORM add_class_ability(new_class_id, 'Rain', 'Deal [WIS base] magic damage to all enemies.', 2, NULL, ARRAY ['multi_damage']);
+    PERFORM add_class_passive(new_class_id, 'Mending Spirit', 'Casting spells applies [Regeneration] to a random ally.', ARRAY ['random_sustain']);
+    PERFORM add_class_passive(new_class_id, 'Warding', 'Gain 1+ warding efficiency.', ARRAY['self_buff', 'perception']);
 END $$;
 
 DO $$
@@ -114,11 +140,11 @@ BEGIN
     INSERT INTO class(name, parent_id) VALUES('Timekeeper', 5) RETURNING id INTO new_class_id;
     PERFORM add_class_stat(new_class_id, 'WIS', 1);
     PERFORM add_class_stat(new_class_id, 'CHA', 2);
-    PERFORM add_class_ability(new_class_id, 'Fast Forward', 'Grant a single ally [WIS base] mana.', 1, NULL);
+    PERFORM add_class_ability(new_class_id, 'Fast Forward', 'Target ally gains [WIS base] mana.', 1, NULL, ARRAY['target_sustain']);
     PERFORM add_class_ability(new_class_id, 'Rewind', 'Rewind a single target to the previous round health value.', 2, 3);
-    PERFORM add_class_ability(new_class_id, 'Pause', '[Stun] a single enemy for 1 round.', 1, 3);
-    PERFORM add_class_passive(new_class_id, 'Foresight', 'See enemy actions before they perform them.');
-    PERFORM add_class_passive(new_class_id, 'Timezone', 'Short rest is considered a long rest.');
+    PERFORM add_class_ability(new_class_id, 'Pause', '[Stun] a single enemy for 1 round.', 1, 3, ARRAY['target_cc']);
+    PERFORM add_class_passive(new_class_id, 'Foresight', 'See enemy actions before they perform them.', ARRAY['perception']);
+    PERFORM add_class_passive(new_class_id, 'Timezone', 'Short rest is considered a long rest.', ARRAY['multi_sustain']);
 END $$;
 
 DO $$
@@ -129,11 +155,11 @@ BEGIN
     PERFORM add_class_stat(new_class_id, 'WIS', 1);
     PERFORM add_class_stat(new_class_id, 'CON', 1);
     PERFORM add_class_stat(new_class_id, 'CHA', 2);
-    PERFORM add_class_ability(new_class_id, 'Natural Protection', 'Grant an ally [Defense] for 1 round.', 1, NULL);
-    PERFORM add_class_ability(new_class_id, 'Spiritual Protection', 'Grant an ally [Defense+] for 3 rounds.', 4, 2);
-    PERFORM add_class_ability(new_class_id, 'Warding Light', 'Remove [Invisibility] for enemies, and cleans [Blindness] for allies.', 2, 2);
-    PERFORM add_class_passive(new_class_id, 'Ward Crafter', 'Gain ward crafting proficiency.');
-    PERFORM add_class_passive(new_class_id, 'Clarity', 'Gain +1 WIS.');
+    PERFORM add_class_ability(new_class_id, 'Natural Protection', 'Target gains [Defense] for 1 round.', 1, NULL, ARRAY['target_sustain']);
+    PERFORM add_class_ability(new_class_id, 'Spiritual Protection', 'Target gains [Defense+] for 3 rounds.', 4, 2, ARRAY['target_sustain']);
+    PERFORM add_class_ability(new_class_id, 'Warding Light', 'Remove [Invisibility] for enemies, and cleans [Blindness] for allies.', 2, 2, ARRAY['multi_cleanse', 'perception']);
+    PERFORM add_class_passive(new_class_id, 'Ward Crafter', 'Gain ward crafting proficiency.', ARRAY['perception']);
+    PERFORM add_class_passive(new_class_id, 'Clarity', 'Gain +1 WIS.', ARRAY['self_buff']);
 END $$;
 
 DO $$
@@ -177,8 +203,8 @@ BEGIN
     PERFORM add_class_ability(new_class_id, 'Void Spawn', 'Summon a [Voidling]', 5, 1);
     PERFORM add_class_ability(new_class_id, 'Void Matter', 'Replenish a summon, familiar, or construct_s HP by [CHA base]', 1, 2);
     PERFORM add_class_ability(new_class_id, 'Guardian', 'Summon a [Void Guardian]', 10, NULL);
-    PERFORM add_class_passive(new_class_id, 'Void Blessing', 'Grant summons, familiars, and constructs +1 Level.');
-    PERFORM add_class_passive(new_class_id, 'Focus Point', 'Grant 50% crit chance to summons, familiars, and constructs.');
+    PERFORM add_class_passive(new_class_id, 'Void Blessing', 'Summons, familiars, and constructs gain +1 Level.');
+    PERFORM add_class_passive(new_class_id, 'Focus Point', 'Summons, familiars, and constructs gain 50% crit chance.');
 END $$;
 
 DO $$
@@ -192,7 +218,7 @@ BEGIN
     PERFORM add_class_ability(new_class_id, 'Harvest', 'Deal half [CHA base] necrotic damage to all enemies.', 1, 3);
     PERFORM add_class_ability(new_class_id, 'Death Mark', 'Inflict [Death Mark] on a single enemy for 3 rounds.', 7, 4);
     PERFORM add_class_ability(new_class_id, 'Underworld', 'Remove all inflictions and debuffs on the caster.', 4, NULL);
-    PERFORM add_class_passive(new_class_id, 'Afterlife', 'Enemies dying will grant you +1 CON for the duration of the battle.');
+    PERFORM add_class_passive(new_class_id, 'Afterlife', 'When an enemy dies during battle, gain +1 CON for the rest of the battle.');
     PERFORM add_class_passive(new_class_id, 'Second Passing', 'Gain -3 CON. On death, ressurect with 50% max health. Refreshes every battle.');
 END $$;
 
@@ -208,7 +234,7 @@ BEGIN
     PERFORM add_class_ability(new_class_id, 'Divine Connection', 'Place [Faith] on a single ally for 3 rounds.', 3, 3);
     PERFORM add_class_ability(new_class_id, 'Holy Spear', 'Deal [CHA base] holy damage to a single enemy.', 1, 1);
     PERFORM add_class_passive(new_class_id, 'Resurrection', 'The next ally that dies will be resurrected. Occurs once per battle.');
-    PERFORM add_class_passive(new_class_id, 'Prayer', 'On turn skip, grant all party members [Defense] for 1 round.');
+    PERFORM add_class_passive(new_class_id, 'Prayer', 'On turn skip, all party members gain [Defense] for 1 round.');
 END $$;
 
 DO $$

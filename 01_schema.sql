@@ -126,7 +126,7 @@ $$ LANGUAGE plpgsql;
 CREATE VIEW v_ability_class AS SELECT
 	ability.id as ability_id,
 	string_agg(class.name, chr(10) ORDER BY class.name) AS list,
-string_agg(class.name, ', ' ORDER BY class.name) AS inline
+    string_agg(class.name, ', ' ORDER BY class.name) AS inline
 FROM ability
 LEFT JOIN class_ability ON class_ability.ability_id = ability.id
 LEFT JOIN class ON class.id = class_ability.class_id
@@ -149,7 +149,7 @@ FROM class
 LEFT JOIN class AS child ON child.parent_id = class.id
 GROUP BY class.id;
 
-CREATE VIEW v_class_stat_main AS SELECT
+CREATE VIEW v_class_main_stat AS SELECT
 	class_stat.class_id AS class_id,
 	string_agg(stat.short, chr(10)) AS list,
 	string_agg(stat.short, ', ') AS inline
@@ -159,7 +159,7 @@ LEFT JOIN stat_type ON stat_type.id = class_stat.type_id
 WHERE stat_type.id = 1
 GROUP BY class_stat.class_id;
 
-CREATE VIEW v_class_stat_other AS SELECT
+CREATE VIEW v_class_other_stat AS SELECT
 	class_stat.class_id AS class_id,
 	string_agg(stat.short || ' (' || stat_type.short || ')', chr(10) ORDER BY class_stat.type_id) AS list,
 	string_agg(stat.short || ' (' || stat_type.short || ')', ', ' ORDER BY class_stat.type_id) AS inline
@@ -185,45 +185,6 @@ FROM class_passive
 LEFT JOIN passive ON passive.id = class_passive.passive_id
 GROUP BY class_passive.class_id;
 
-CREATE VIEW ability_wiki AS SELECT
-	ability.id,
-	ability.name,
-	ability.def,
-	ability.cd,
-	COALESCE(ability.mp_cost::text, 'None') AS mp_cost,
-	v_ability_class.list AS classes
-FROM ability
-LEFT JOIN v_ability_class ON v_ability_class.ability_id = ability.id
-ORDER BY ability.name;
-
-CREATE VIEW passive_wiki AS SELECT
-	passive.*,
-	v_passive_class.list AS classes
-FROM passive
-LEFT JOIN v_passive_class ON v_passive_class.passive_id = passive.id
-ORDER BY passive.name;
-
-CREATE VIEW class_wiki AS SELECT
-	class.id as id,
-	class.name AS name,
-	COALESCE(v_class_child.list, '-') AS subclasses,
-	COALESCE(parent.name, '-') AS subclass_of,
-	v_class_stat_main.list AS main_stats,
-	v_class_stat_other.list AS other_stats,
-	v_class_ability.list AS abilities,
-	v_class_passive.list AS passives
-FROM class
-LEFT JOIN v_class_child ON v_class_child.parent_id = class.id
-LEFT JOIN class AS parent ON parent.id = class.parent_id
-LEFT JOIN v_class_stat_main ON v_class_stat_main.class_id = class.id
-LEFT JOIN v_class_stat_other ON v_class_stat_other.class_id = class.id
-LEFT JOIN v_class_ability ON v_class_ability.class_id = class.id
-LEFT JOIN v_class_passive ON v_class_passive.class_id = class.id
-ORDER BY
-	COALESCE(class.parent_id, class.id),
-	class.parent_id NULLS FIRST,
-	class.id;
-
 CREATE VIEW ability_sidx AS SELECT
 	COALESCE(ability.name, '<null>') || ' (Ability)' || chr(10) || chr(10) ||
 	COALESCE(ability.def, '<null>') || chr(10) || chr(10) ||
@@ -243,16 +204,16 @@ LEFT JOIN v_passive_class ON v_passive_class.passive_id = passive.id;
 
 CREATE VIEW class_sidx AS SELECT
 	COALESCE(class.name, '<null>') || ' (Class)' || chr(10) || chr(10) ||
-	'Main stats: ' || COALESCE(v_class_stat_main.inline, '<null>') || chr(10) ||
-	'Other stats: ' || COALESCE(v_class_stat_other.inline, '<null>') || chr(10) ||
+	'Main stats: ' || COALESCE(v_class_main_stat.inline, '<null>') || chr(10) ||
+	'Other stats: ' || COALESCE(v_class_other_stat.inline, '<null>') || chr(10) ||
 	'Passives: ' || COALESCE(v_class_passive.inline, '<null>') || chr(10) ||
 	'Abilities: ' || COALESCE(v_class_ability.inline, '<null>') || chr(10) || chr(10) ||
 	'Parent class: ' || COALESCE(parent.name, '<null>') || chr(10) ||
 	'Subclasses: ' || COALESCE(v_class_child.inline, '<null>')
 	AS idx
 FROM class
-LEFT JOIN v_class_stat_main ON v_class_stat_main.class_id = class.id
-LEFT JOIN v_class_stat_other ON v_class_stat_other.class_id = class.id
+LEFT JOIN v_class_main_stat ON v_class_main_stat.class_id = class.id
+LEFT JOIN v_class_other_stat ON v_class_other_stat.class_id = class.id
 LEFT JOIN v_class_passive ON v_class_passive.class_id = class.id
 LEFT JOIN v_class_ability ON v_class_ability.class_id = class.id
 LEFT JOIN class AS parent ON parent.id = class.parent_id
