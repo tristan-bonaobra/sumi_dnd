@@ -8,8 +8,10 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
-    "psycopg2>=2.9.12",
-    "pyinstaller>=6.22.2",
+    "dotenv>=0.9.9",
+    "pandas>=3.0.5",
+    "sqlalchemy>=2.0.52",
+    "tabulate>=0.10.0",
 ]
 
 [project.scripts]
@@ -18,3 +20,11 @@ sumi-dnd = "sumi_dnd:main"
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "deptry>=0.25.1",
+]
+
+[tool.deptry]
+known_first_party = ["database"]
