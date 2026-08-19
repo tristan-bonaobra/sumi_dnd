@@ -1,0 +1,20 @@
+[project]
+name = "sumi-dnd"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Tristan Bonaobra", email = "316808543+tristan-bonaobra@users.noreply.github.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "psycopg2>=2.9.12",
+    "pyinstaller>=6.22.2",
+]
+
+[project.scripts]
+sumi-dnd = "sumi_dnd:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
