@@ -1,4 +1,10 @@
+# Glossary
+# char          pdfplumber character dict
+# fgroup        format group; chars grouped based on size and non-stroking color; to group into an fgroup
+# linegroup     chars grouped by top; to group into a linegroup
+
 import pdfplumber
+import math
 from pathlib import Path
 
 repo_dir = Path(__file__).resolve().parents[2]
@@ -46,10 +52,30 @@ def create_word(start_char):
 def sort_chars(chars):
     return sorted(chars, key=lambda c: (round(c["top"]), c["x0"]))
 
+def fgroup_chars(chars):
+    fgroups = []
+    for char in chars:
+        matching_fgroup = None
+        for fgroup in fgroups:
+            color_matches = char["non_stroking_color"] == fgroup["non_stroking_color"]
+            size_matches = char["size"] == fgroup["size"]
+            if color_matches and size_matches:
+                matching_fgroup = fgroup
+                break
+        if matching_fgroup is not None:
+            matching_fgroup["chars"].append(char)
+        else:
+            new_fgroup = {
+                "non_stroking_color": char["non_stroking_color"],
+                "size": char["size"],
+                "chars": [char]
+            }
+            fgroups.append(new_fgroup)
+    return fgroups
+
 with pdfplumber.open(pdf_path) as pdf:
     page = pdf.pages[0]
     chars = page.chars
-    sorted_chars = sort_chars(chars)
-    words = group_chars_into_words(sorted_chars)
-    for word_dict in words[:30]:
-        print(round(word_dict["x0"], 1), round(word_dict["top"], 1), word_dict["text"])
+    fgroups = fgroup_chars(chars)
+    for fgroup in fgroups:
+        print(fgroup["non_stroking_color"], fgroup["size"], len(fgroup["chars"]))
