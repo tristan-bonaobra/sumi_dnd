@@ -8,7 +8,15 @@ from pathlib import Path
 CRECT_WIDTH = 1439.99994
 CRECT_HEIGHT = 809.9999662499999
 CRECT_BUFFER = 50
-CRECT_VSPLIT_OFFSET = 5 # Split 5 pts to the right of where Passive starts
+CRECT_VSPLIT_OFFSET = 5 # Split some distance to the right of where Passive starts
+CRECT_HEADER_CUTOFF = 52.54079888160038
+CRECT_HEADER_BUFFER = 5 # Start the actual cutoff some distance below CRECT_HEADER_CUTOFF
+
+# List all possible forms of the same functional marker
+MARKERS_MAIN_STATS = ["Main Stat"]
+MARKERS_SUB_STATS = ["Simplified", "Sub Stat"]
+MARKERS_ABILITY_CARD = ["Class abilities"]
+
 
 repo_dir = Path(__file__).resolve().parents[2]
 dm_dir = repo_dir / "dm"
@@ -34,7 +42,7 @@ def crop_to_rect(page, rect):
     cropped_page = page.crop(box)
     return cropped_page
 
-def crop_to_rect_vsplit(page, rect, split_x): # Can't crop CroppedPage
+def crop_to_rect_vsplit(page, rect, split_x): # Can't get CroppedPage bounds
     left_box = (rect["x0"], rect["top"], split_x, rect["bottom"])
     right_box = (split_x, rect["top"], rect["x1"], rect["bottom"])
     left_crop = page.crop(left_box)
@@ -42,12 +50,22 @@ def crop_to_rect_vsplit(page, rect, split_x): # Can't crop CroppedPage
     page_crops = [left_crop, right_crop]
     return page_crops
 
+def any_marker_in_text(markers, text, case_sensitive=False):
+    for marker in markers:
+        if case_sensitive:
+            if marker in text:
+                return True
+        else:
+            if marker.lower() in text.lower():
+                return True
+    return False
+
 with pdfplumber.open(pdf_path) as pdf:
     for page_num, page in enumerate(pdf.pages, start=1):
         crects = get_crects(page)
         for crect_idx, crect in enumerate(crects, start=1):
-            full_crop = crop_to_rect(page, crect)
-            words = full_crop.extract_words()
+            crect_crop = crop_to_rect(page, crect)
+            words = crect_crop.extract_words()
             passive_word = next((w for w in words if "passive" in w["text"].lower()), None)
             print(f"\n==========================================")
             print(f" PAGE {page_num} - CARD {crect_idx}")
@@ -63,4 +81,4 @@ with pdfplumber.open(pdf_path) as pdf:
                 print(right_crop.extract_text())
             else: # crect is a left card including stats
                 print("\n--- CLASS INFO & STATS ---")
-                print(full_crop.extract_text())
+                print(crect_crop.extract_text())
