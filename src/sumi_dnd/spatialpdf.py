@@ -2,8 +2,10 @@
 # crect         class rect
 # nsc           non-stroking color
 # cformat       char format
+# cmformat      comment format
 
 import pdfplumber
+import math
 from pathlib import Path
 from collections import defaultdict
 
@@ -20,6 +22,10 @@ MARKERS_MAIN_STATS = ["Main Stat"]
 MARKERS_SUB_STATS = ["Simplified", "Sub Stat"]
 MARKERS_ABILITY_CARD = ["Class abilities"]
 MARKERS_ITALICS = ["italic", "oblique"]
+
+# We assume that all comments are roughly this color and italic.
+CMFORMAT_NSC = (0.5725, 0.5725, 0.5725) # This assumes DeviceRGB.
+CMFORMAT_NSC_BUFFER = 0.075
 
 repo_dir = Path(__file__).resolve().parents[2]
 dm_dir = repo_dir / "dm"
@@ -68,7 +74,8 @@ def analyze_chars(page):
         cformat = cformats[key]
         cformat.append(char)
     for (size, is_italic, nsc), chars in cformats.items():
-        print(size, is_italic, nsc, len(chars))
+        joined_chars = "".join(char["text"] for char in chars)
+        print(size, is_italic, nsc, joined_chars)
     return cformats
 
 def check_italic(char):
@@ -77,6 +84,22 @@ def check_italic(char):
         if marker.lower() in fontname.lower():
             return True
     return False
+
+def check_cmformat(char):
+    color_dist = math.dist(char["non_stroking_color"], CMFORMAT_NSC)
+    is_color_cmformat = color_dist <= CMFORMAT_NSC_BUFFER
+    is_italic = check_italic(char)
+    is_cmformat = is_color_cmformat and is_italic
+    return is_cmformat
+
+def comment_filter(object):
+    is_char = object["object_type"] == "char"
+    if is_char:
+        is_cmformat = check_cmformat(object)
+        if is_cmformat:
+            # Do not include this object, as it is part of a comment
+            return False
+    return True
 
 def any_marker_in_text(markers, text, case_sensitive=False):
     for marker in markers:
@@ -92,7 +115,8 @@ with pdfplumber.open(pdf_path) as pdf:
     for page_num, page in enumerate(pdf.pages, start=1):
         crects = get_crects(page)
         for crect_idx, crect in enumerate(crects, start=1):
-            crect_crop = crop_to_rect(page, crect)
+            filtered_page = page.filter(comment_filter)
+            crect_crop = crop_to_rect(filtered_page, crect)
             words = crect_crop.extract_words()
             passive_word = next((w for w in words if "passive" in w["text"].lower()), None)
             print(f"\n==========================================")
@@ -100,7 +124,7 @@ with pdfplumber.open(pdf_path) as pdf:
             print(f"==========================================")
             if passive_word: # crect is a right card including kits
                 split_x = passive_word["x0"] + CRECT_VSPLIT_OFFSET
-                page_crops = crop_to_rect_vsplit(page, crect, split_x)
+                page_crops = crop_to_rect_vsplit(filtered_page, crect, split_x)
                 left_crop = page_crops[0]
                 right_crop = page_crops[1]
                 print("\n--- ABILITIES (LEFT COLUMN) ---")
@@ -110,4 +134,4 @@ with pdfplumber.open(pdf_path) as pdf:
             else: # crect is a left card including stats
                 print("\n--- CLASS INFO & STATS ---")
                 print(crect_crop.extract_text())
-            analyze_chars(crect_crop)
+            analyze_chars(filtered_page)
