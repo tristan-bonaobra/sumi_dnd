@@ -1,8 +1,11 @@
 # Glossary
 # crect         class rect
+# nsc           non-stroking color
+# cformat       char format
 
 import pdfplumber
 from pathlib import Path
+from collections import defaultdict
 
 # Measurements based on Blade Dancer 22 Aug 2026
 CRECT_WIDTH = 1439.99994
@@ -16,13 +19,13 @@ CRECT_HEADER_BUFFER = 5 # Start the actual cutoff some distance below CRECT_HEAD
 MARKERS_MAIN_STATS = ["Main Stat"]
 MARKERS_SUB_STATS = ["Simplified", "Sub Stat"]
 MARKERS_ABILITY_CARD = ["Class abilities"]
-
+MARKERS_ITALICS = ["italic", "oblique"]
 
 repo_dir = Path(__file__).resolve().parents[2]
 dm_dir = repo_dir / "dm"
 pdf_path = dm_dir / "class_template.pdf"
 
-def is_crect(rect):
+def check_crect(rect):
     rect_width = rect["width"]
     rect_height = rect["height"]
     width_diff = abs(rect_width - CRECT_WIDTH)
@@ -34,7 +37,7 @@ def is_crect(rect):
 
 def get_crects(page):
     rects = page.rects
-    crects = [rect for rect in rects if is_crect(rect)]
+    crects = [rect for rect in rects if check_crect(rect)]
     return crects
 
 def crop_to_rect(page, rect):
@@ -49,6 +52,31 @@ def crop_to_rect_vsplit(page, rect, split_x): # Can't get CroppedPage bounds
     right_crop = page.crop(right_box)
     page_crops = [left_crop, right_crop]
     return page_crops
+
+def analyze_chars(page):
+    # cformats structure:
+    # {
+    #      (size, is_italic, nsc): [char, char, char],
+    #      (size, is_italic, nsc): [char, char, char]
+    # }
+    cformats = defaultdict(list)
+    for char in page.chars:
+        size = char["size"]
+        is_italic = check_italic(char)
+        nsc = char["non_stroking_color"]
+        key = (size, is_italic, nsc)
+        cformat = cformats[key]
+        cformat.append(char)
+    for (size, is_italic, nsc), chars in cformats.items():
+        print(size, is_italic, nsc, len(chars))
+    return cformats
+
+def check_italic(char):
+    fontname = char["fontname"]
+    for marker in MARKERS_ITALICS:
+        if marker.lower() in fontname.lower():
+            return True
+    return False
 
 def any_marker_in_text(markers, text, case_sensitive=False):
     for marker in markers:
@@ -82,3 +110,4 @@ with pdfplumber.open(pdf_path) as pdf:
             else: # crect is a left card including stats
                 print("\n--- CLASS INFO & STATS ---")
                 print(crect_crop.extract_text())
+            analyze_chars(crect_crop)
