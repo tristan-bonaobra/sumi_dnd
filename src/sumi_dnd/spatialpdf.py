@@ -11,9 +11,10 @@ from pathlib import Path
 from collections import defaultdict
 
 # Measurements based on Blade Dancer 22 Aug 2026
-CRECT_WIDTH = 1439.99994
-CRECT_HEIGHT = 809.9999662499999
-CRECT_BUFFER = 50
+EXPECTED_CRECT_WIDTH = 1439.99994
+EXPECTED_CRECT_HEIGHT = 809.9999662499999
+expected_crect_ratio = EXPECTED_CRECT_WIDTH / EXPECTED_CRECT_HEIGHT
+CRECT_BUFFER_PCT = 0.05
 CRECT_VSPLIT_OFFSET = 5 # Split some distance to the right of where Passive starts
 CRECT_HEADER_CUTOFF = 52.54079888160038
 CRECT_HEADER_BUFFER = 5 # Start the actual cutoff some distance below CRECT_HEADER_CUTOFF
@@ -78,11 +79,10 @@ def confirm_any_marker_in_text(markers, text, case_sensitive=False):
 def confirm_rect_is_crect(rect):
     rect_width = rect["width"]
     rect_height = rect["height"]
-    width_diff = abs(rect_width - CRECT_WIDTH)
-    height_diff = abs(rect_height - CRECT_HEIGHT)
-    within_width = width_diff <= CRECT_BUFFER
-    within_height = height_diff <= CRECT_BUFFER
-    is_crect = within_width and within_height
+    rect_ratio = rect_width / rect_height
+    ratio_diff = abs(rect_ratio - expected_crect_ratio)
+    within_buffer = ratio_diff <= (expected_crect_ratio * CRECT_BUFFER_PCT)
+    is_crect = within_buffer
     return is_crect
 
 def confirm_char_matches_cmformat(char):
