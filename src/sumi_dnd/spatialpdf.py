@@ -68,14 +68,15 @@ def analyze_chars(page):
     cformats = defaultdict(list)
     for char in page.chars:
         size = char["size"]
+        fontname = char["fontname"]
         is_italic = check_italic(char)
         nsc = char["non_stroking_color"]
-        key = (size, is_italic, nsc)
+        key = (size, fontname, is_italic, nsc)
         cformat = cformats[key]
         cformat.append(char)
-    for (size, is_italic, nsc), chars in cformats.items():
+    for (size, fontname, is_italic, nsc), chars in cformats.items():
         joined_chars = "".join(char["text"] for char in chars)
-        print(size, is_italic, nsc, joined_chars)
+        print(size, fontname, "is_italic:" + str(is_italic), nsc, joined_chars)
     return cformats
 
 def check_italic(char):
