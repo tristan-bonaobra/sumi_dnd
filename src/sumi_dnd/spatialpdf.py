@@ -3,6 +3,7 @@
 # nsc           non-stroking color
 # cformat       char format
 # cmformat      comment format
+# shformat      subheader format
 
 import pdfplumber
 import math
@@ -42,8 +43,8 @@ def check_crect(rect):
     height_diff = abs(rect_height - CRECT_HEIGHT)
     within_width = width_diff <= CRECT_BUFFER
     within_height = height_diff <= CRECT_BUFFER
-    result = within_width and within_height
-    return result
+    is_crect = within_width and within_height
+    return is_crect
 
 def get_crects(page):
     rects = page.rects
@@ -109,6 +110,20 @@ def any_marker_in_text(markers, text, case_sensitive=False):
                 return True
     return False
 
+def filter_keep_subheaders(object):
+    is_char = object["object_type"] == "char"
+    if is_char:
+        is_bold = any_marker_in_text(MARKERS_BOLD, object["fontname"])
+        if is_bold:
+            return True
+    return False
+
+def extract_subheaders(page):
+    filtered_page = page.filter(filter_keep_subheaders)
+    text = filtered_page.extract_text()
+    subheaders = text.split("\n")
+    return subheaders
+
 with pdfplumber.open(pdf_path) as pdf:
     for page_num, page in enumerate(pdf.pages, start=1):
         crects = get_crects(page)
@@ -127,8 +142,12 @@ with pdfplumber.open(pdf_path) as pdf:
                 right_crop = page_crops[1]
                 print("\n--- ABILITIES (LEFT COLUMN) ---")
                 print(left_crop.extract_text())
+                for subheader in extract_subheaders(left_crop):
+                    print("Subheader:" + subheader)
                 print("\n--- PASSIVES (RIGHT COLUMN) ---")
                 print(right_crop.extract_text())
+                for subheader in extract_subheaders(right_crop):
+                    print("Subheader:" + subheader)
             else: # crect is a left card including stats
                 print("\n--- CLASS INFO & STATS ---")
                 print(crect_crop.extract_text())
