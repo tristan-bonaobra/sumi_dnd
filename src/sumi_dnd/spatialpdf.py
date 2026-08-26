@@ -22,10 +22,14 @@ MARKERS_MAIN_STATS = ["Main Stat"]
 MARKERS_SUB_STATS = ["Simplified", "Sub Stat"]
 MARKERS_ABILITY_CARD = ["Class abilities"]
 MARKERS_ITALICS = ["italic", "oblique"]
+MARKERS_BOLD = ["bold", "bd", "heavy", "thick", "blk", "black", "medi"]
 
 # We assume that all comments are roughly this color and italic.
 CMFORMAT_NSC = (0.5725, 0.5725, 0.5725) # This assumes DeviceRGB.
 CMFORMAT_NSC_BUFFER = 0.075
+
+# For the left card we'll go by markers in the text itself.
+# For the right card we'll assume only that subheaders are bold, and uniquely so.
 
 repo_dir = Path(__file__).resolve().parents[2]
 dm_dir = repo_dir / "dm"
@@ -69,7 +73,7 @@ def analyze_chars(page):
     for char in page.chars:
         size = char["size"]
         fontname = char["fontname"]
-        is_italic = check_italic(char)
+        is_italic = any_marker_in_text(MARKERS_ITALICS, char["fontname"])
         nsc = char["non_stroking_color"]
         key = (size, fontname, is_italic, nsc)
         cformat = cformats[key]
@@ -79,21 +83,14 @@ def analyze_chars(page):
         print(size, fontname, "is_italic:" + str(is_italic), nsc, joined_chars)
     return cformats
 
-def check_italic(char):
-    fontname = char["fontname"]
-    for marker in MARKERS_ITALICS:
-        if marker.lower() in fontname.lower():
-            return True
-    return False
-
 def check_cmformat(char):
     color_dist = math.dist(char["non_stroking_color"], CMFORMAT_NSC)
     is_color_cmformat = color_dist <= CMFORMAT_NSC_BUFFER
-    is_italic = check_italic(char)
+    is_italic = any_marker_in_text(MARKERS_ITALICS, char["fontname"])
     is_cmformat = is_color_cmformat and is_italic
     return is_cmformat
 
-def comment_filter(object):
+def filter_no_comments(object):
     is_char = object["object_type"] == "char"
     if is_char:
         is_cmformat = check_cmformat(object)
@@ -116,7 +113,7 @@ with pdfplumber.open(pdf_path) as pdf:
     for page_num, page in enumerate(pdf.pages, start=1):
         crects = get_crects(page)
         for crect_idx, crect in enumerate(crects, start=1):
-            filtered_page = page.filter(comment_filter)
+            filtered_page = page.filter(filter_no_comments)
             crect_crop = crop_to_rect(filtered_page, crect)
             words = crect_crop.extract_words()
             passive_word = next((w for w in words if "passive" in w["text"].lower()), None)
