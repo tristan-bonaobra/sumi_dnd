@@ -36,7 +36,7 @@ CMFORMAT_NSC_BUFFER = 0.075
 
 repo_dir = Path(__file__).resolve().parents[2]
 dm_dir = repo_dir / "dm"
-pdf_path = dm_dir / "class_template.pdf"
+pdf_path = dm_dir / "class_knight.pdf"
 
 #-------------------------------------------------------------------------------------------------+
 #   META ANALYSIS
@@ -185,6 +185,12 @@ def extract_stats_from_text(text):
 with pdfplumber.open(pdf_path) as pdf:
     all_rpgclasses = defaultdict(dict)
     for page in pdf.pages:
+        hi = 0
+        for rect in page.images:
+            print("IsCrect:", confirm_rect_is_crect(rect), "Width:", round(rect["width"], 1), "Height:", round(rect["height"], 1), "Ratio:", round(rect["width"] / rect["height"], 1), f"\n")
+            if round(rect["width"] / rect["height"], 1) == 1.4:
+                hi += 1
+        print(hi)
         for crect in extract_crects_from_page(page):
             current_view = crop_to_rect(page, crect)
             current_view = current_view.filter(filter_remove_comments)
