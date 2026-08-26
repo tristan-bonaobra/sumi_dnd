@@ -3,7 +3,6 @@
 # nsc           non-stroking color
 # cformat       char format
 # cmformat      comment format
-# shformat      subheader format
 
 import pdfplumber
 import math
@@ -21,6 +20,7 @@ CRECT_HEADER_BUFFER = 5 # Start the actual cutoff some distance below CRECT_HEAD
 # List all possible forms of the same functional marker
 MARKERS_MAIN_STATS = ["Main Stat"]
 MARKERS_SUB_STATS = ["Simplified", "Sub Stat"]
+MARKERS_BONUS_ATTS = ["Bonus"]
 MARKERS_SKILL_CARD = ["Class abilities"]
 MARKERS_ITALICS = ["italic", "oblique"]
 MARKERS_BOLD = ["bold", "bd", "heavy", "thick", "blk", "black", "medi"]
@@ -92,21 +92,21 @@ def confirm_char_matches_cmformat(char):
     return is_cmformat
 
 #-------------------------------------------------------------------------------------------------+
-#   CROPPING
+#   CROP TO VIEW
 #-------------------------------------------------------------------------------------------------+
 
 def crop_to_rect(page, rect):
     box = (rect["x0"], rect["top"], rect["x1"], rect["bottom"])
-    cropped_page = page.crop(box)
-    return cropped_page
+    view = page.crop(box)
+    return view
 
 def crop_to_rect_vsplit(page, rect, split_x): # Can't get CroppedPage bounds it seems
     left_box = (rect["x0"], rect["top"], split_x, rect["bottom"])
     right_box = (split_x, rect["top"], rect["x1"], rect["bottom"])
     left_crop = page.crop(left_box)
     right_crop = page.crop(right_box)
-    page_crops = [left_crop, right_crop]
-    return page_crops
+    views = [left_crop, right_crop]
+    return views
 
 #-------------------------------------------------------------------------------------------------+
 #   FILTERS FOR PAGE.FILTER()
@@ -133,21 +133,55 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
 #   EXTRACTION
 #-------------------------------------------------------------------------------------------------+
 
-def extract_crects(page):
+def extract_crects_from_page(page):
     rects = page.rects
     crects = [rect for rect in rects if confirm_rect_is_crect(rect)]
     return crects
 
-def extract_subheaders(page):
-    filtered_page = page.filter(filter_keep_subheaders)
+def extract_subheader_markers_from_view(view):
+    filtered_page = view.filter(filter_keep_subheaders)
     text = filtered_page.extract_text()
-    subheaders = text.split("\n")
-    return subheaders
+    markers = text.split("\n")
+    return markers
+
+def extract_stats_from_text(text):
+    stats = {"class_name": "", "def": "", "main": [], "sub": [], "bonus_atts": []}
+    mode = "init"
+    for key, line in enumerate(text.split("\n")):
+        stipped_line = line.rstrip()
+        stat = stipped_line.upper()
+        extracting_main = confirm_any_marker_in_text(MARKERS_MAIN_STATS, line)
+        extracting_sub = confirm_any_marker_in_text(MARKERS_SUB_STATS, line)
+        extracting_bonus_atts = confirm_any_marker_in_text(MARKERS_BONUS_ATTS, line)
+        if extracting_main:
+            mode = "main"
+            continue
+        elif extracting_sub:
+            mode = "sub"
+            continue
+        elif extracting_bonus_atts:
+            mode = "bonus_atts"
+            continue
+        if mode == "init":
+            if key == 0: stats["class_name"] = stipped_line
+            else: stats["def"] += line
+        elif mode == "main": stats["main"].append(stat)
+        elif mode == "sub": stats["sub"].append(stat)
+        elif mode == "bonus_atts": stats["bonus_atts"].append(line)
+    for key, value in stats.items():
+        print(key, value)
+
+#-------------------------------------------------------------------------------------------------+
+#   ORCHESTRATION
+#-------------------------------------------------------------------------------------------------+
 
 with pdfplumber.open(pdf_path) as pdf:
     for page in pdf.pages:
-        for crect in extract_crects(page):
+        for crect in extract_crects_from_page(page):
             current_view = crop_to_rect(page, crect)
+            current_view = current_view.filter(filter_remove_comments)
             current_text = current_view.extract_text()
             is_skill_card = confirm_any_marker_in_text(MARKERS_SKILL_CARD, current_text)
             is_stat_card = not is_skill_card
+            if is_stat_card:
+                extract_stats_from_text(current_text)
