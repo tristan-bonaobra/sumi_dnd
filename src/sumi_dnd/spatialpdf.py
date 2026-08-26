@@ -6,6 +6,7 @@
 
 import pdfplumber
 import math
+import json
 from pathlib import Path
 from collections import defaultdict
 
@@ -103,10 +104,9 @@ def crop_to_rect(page, rect):
 def crop_to_rect_vsplit(page, rect, split_x): # Can't get CroppedPage bounds it seems
     left_box = (rect["x0"], rect["top"], split_x, rect["bottom"])
     right_box = (split_x, rect["top"], rect["x1"], rect["bottom"])
-    left_crop = page.crop(left_box)
-    right_crop = page.crop(right_box)
-    views = [left_crop, right_crop]
-    return views
+    left_view = page.crop(left_box)
+    right_view = page.crop(right_box)
+    return left_view, right_view
 
 #-------------------------------------------------------------------------------------------------+
 #   FILTERS FOR PAGE.FILTER()
@@ -145,17 +145,23 @@ def extract_subheader_markers_from_view(view):
     return markers
 
 def extract_stats_from_text(text):
-    stats = {"class_name": "", "def": "", "main": [], "sub": [], "bonus_atts": []}
+    new_rpgclass = {
+        "def": "",
+        "main": [],
+        "sub": [],
+        "bonus_atts": []
+    }
+    new_rpgclass_name = None
     mode = "init"
     for key, line in enumerate(text.split("\n")):
-        stipped_line = line.rstrip()
-        stat = stipped_line.upper()
+        stripped_line = line.rstrip()
+        stat = stripped_line.upper()
         extracting_main = confirm_any_marker_in_text(MARKERS_MAIN_STATS, line)
         extracting_sub = confirm_any_marker_in_text(MARKERS_SUB_STATS, line)
         extracting_bonus_atts = confirm_any_marker_in_text(MARKERS_BONUS_ATTS, line)
         if extracting_main:
             mode = "main"
-            continue
+            continue # Skip the subheader
         elif extracting_sub:
             mode = "sub"
             continue
@@ -163,19 +169,21 @@ def extract_stats_from_text(text):
             mode = "bonus_atts"
             continue
         if mode == "init":
-            if key == 0: stats["class_name"] = stipped_line
-            else: stats["def"] += line
-        elif mode == "main": stats["main"].append(stat)
-        elif mode == "sub": stats["sub"].append(stat)
-        elif mode == "bonus_atts": stats["bonus_atts"].append(line)
-    for key, value in stats.items():
-        print(key, value)
+            if key == 0: new_rpgclass_name = stripped_line
+            else: new_rpgclass["def"] += line # From here on out assume rpgclass exists
+        elif mode == "main": new_rpgclass["main"].append(stat)
+        elif mode == "sub": new_rpgclass["sub"].append(stat)
+        elif mode == "bonus_atts": new_rpgclass["bonus_atts"].append(line)
+    new_rpgclasses = {}
+    new_rpgclasses[new_rpgclass_name] = new_rpgclass
+    return new_rpgclasses
 
 #-------------------------------------------------------------------------------------------------+
 #   ORCHESTRATION
 #-------------------------------------------------------------------------------------------------+
 
 with pdfplumber.open(pdf_path) as pdf:
+    all_rpgclasses = defaultdict(dict)
     for page in pdf.pages:
         for crect in extract_crects_from_page(page):
             current_view = crop_to_rect(page, crect)
@@ -183,5 +191,9 @@ with pdfplumber.open(pdf_path) as pdf:
             current_text = current_view.extract_text()
             is_skill_card = confirm_any_marker_in_text(MARKERS_SKILL_CARD, current_text)
             is_stat_card = not is_skill_card
+            new_rpgclasses = {}
             if is_stat_card:
-                extract_stats_from_text(current_text)
+                new_rpgclasses = extract_stats_from_text(current_text)
+            for new_rpgclass_name, new_rpgclass in new_rpgclasses.items():
+                all_rpgclasses[new_rpgclass_name] |= new_rpgclass
+    print(json.dumps(all_rpgclasses, indent=4))
