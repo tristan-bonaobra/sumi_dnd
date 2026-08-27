@@ -4,6 +4,7 @@
 # nsc           non-stroking color
 # cformat       char format
 # cmformat      comment format
+# ap            abilities and passives
 
 # NAMING CONVENTIONS
 # "Passives" and "abilities" are in plural when refering to their respective columns.
@@ -41,6 +42,10 @@ EXTRACT_TEXT_Y_TOLERANCE = 0.05
 # Sometimes the abilities column bleeds into the passives column.
 # This indent is expressed as a percentage of the width of the "Passive" subheader.
 PASSIVE_COLUMN_INDENT_PCT = 0.2
+
+# Crop headers starting from some space underneath the column header.
+# "Passive" gets split due to the indent. It's noise, anyway.
+COLUMN_HEADER_BUFFER_PCT = 0.5
 
 # For the left card we'll go by markers in the text itself.
 # For the right card we'll assume only that subheaders are bold, and uniquely so.
@@ -104,6 +109,19 @@ def confirm_char_matches_cmformat(char):
     return is_cmformat
 
 #-------------------------------------------------------------------------------------------------+
+#   PAGE SEARCH
+#-------------------------------------------------------------------------------------------------+
+
+def find_first_instance_of_word_in_page(keyword, page, case_sensitive=False):
+    words = page.extract_words(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
+    for word in words:
+        text = word["text"]
+        if case_sensitive and (text == keyword):
+            return word
+        if (not case_sensitive) and (text.lower() == keyword.lower()):
+            return word
+
+#-------------------------------------------------------------------------------------------------+
 #   CROP TO VIEW
 #-------------------------------------------------------------------------------------------------+
 
@@ -118,31 +136,28 @@ def clamp_box_to_page(box, page):
     new_y1 = clamp(old_y1, 0, page.height)
     return (new_x0, new_y0, new_x1, new_y1)
 
-def crop_to_image(page, image):
+def crop_page_to_image(page, image):
     box = (image["x0"], image["top"], image["x1"], image["bottom"])
     box = clamp_box_to_page(box, page)
     view = page.crop(box)
     return view
 
-def crop_to_image_vsplit(page, image, split_x): # Can't get CroppedPage bounds it seems
-    left_box = (image["x0"], image["top"], split_x, image["bottom"])
-    right_box = (split_x, image["top"], image["x1"], image["bottom"])
+def crop_whole_page_to_ap_column_views_on_card(page, card):
+    card_view = crop_page_to_image(page, card)
+    # cheader: column header
+    cheader = find_first_instance_of_word_in_page(MARKER_PASSIVE_COLUMN, card_view) # The subheader at which to split.
+    cheader_width = cheader["x1"] - cheader["x0"]
+    cheader_height = cheader["bottom"] - cheader["top"]
+    indent = cheader_width * PASSIVE_COLUMN_INDENT_PCT
+    shave = cheader_height * COLUMN_HEADER_BUFFER_PCT
+    split_x = cheader["x0"] + indent
+    top = cheader["bottom"] + shave
+    # Crop the original page into the columns. I think it's easier that way.
+    left_box = (card["x0"], top, split_x, card["bottom"])
+    right_box = (split_x, top, card["x1"], card["bottom"])
     left_view = page.crop(left_box)
     right_view = page.crop(right_box)
     return left_view, right_view
-
-def crop_to_abilities_and_passives_columns(page):
-    # p: passives, a: abilities
-    p_subheader = find_first_instance_of_word_in_page(MARKER_PASSIVE_COLUMN, page)
-    p_subheader_width = p_subheader["x1"] - p_subheader["x0"]
-    indent = p_subheader_width * PASSIVE_COLUMN_INDENT_PCT
-    split_x = p_subheader["x0"] + indent
-    # box: left, top, right, bottom
-    box_a = (0, 0, split_x, page.height)
-    box_p = (split_x, 0, page.width, page.height)
-    view_a = page.crop(box_a, relative=True)
-    view_p = page.crop(box_p, relative=True)
-    return view_a, view_p
 
 #-------------------------------------------------------------------------------------------------+
 #   FILTERS FOR PAGE.FILTER()
@@ -166,21 +181,12 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
     return False
 
 #-------------------------------------------------------------------------------------------------+
-#   PAGE SEARCH
-#-------------------------------------------------------------------------------------------------+
-
-def find_first_instance_of_word_in_page(keyword, page, case_sensitive=False):
-    words = page.extract_words(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
-    for word in words:
-        text = word["text"]
-        if case_sensitive and (text == keyword):
-            return word
-        if (not case_sensitive) and (text.lower() == keyword.lower()):
-            return word
-
-#-------------------------------------------------------------------------------------------------+
 #   EXTRACTION
 #-------------------------------------------------------------------------------------------------+
+
+def custom_extract_text(page): # Not to be confused with page.extract_text()
+    text = page.extract_text(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
+    return text
 
 def extract_cards_from_page(page):
     images = page.images
@@ -189,7 +195,7 @@ def extract_cards_from_page(page):
 
 def extract_subheader_markers_from_view(view):
     filtered_page = view.filter(filter_keep_subheaders)
-    text = filtered_page.extract_text()
+    text = custom_extract_text(filtered_page)
     markers = text.split("\n")
     return markers
 
@@ -229,7 +235,7 @@ def extract_stats_from_text(text):
     return new_rpgclasses
 
 def extract_abilities_from_text(text):
-    print(text)
+    print("Hello world!")
 
 #-------------------------------------------------------------------------------------------------+
 #   ORCHESTRATION
@@ -239,17 +245,26 @@ with pdfplumber.open(pdf_path) as pdf:
     all_rpgclasses = defaultdict(dict)
     for page in pdf.pages:
         for card in extract_cards_from_page(page):
-            current_view = crop_to_image(page, card)
+            current_view = crop_page_to_image(page, card)
             current_view = current_view.filter(filter_remove_comments)
-            current_text = current_view.extract_text(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
+            current_text = custom_extract_text(current_view)
             is_skill_card = confirm_any_marker_in_text(MARKERS_SKILL_CARD, current_text)
             is_stat_card = not is_skill_card
             new_rpgclasses = {}
             if is_stat_card:
                 new_rpgclasses = extract_stats_from_text(current_text)
             if is_skill_card:
-                abilities_column, passives_column = crop_to_abilities_and_passives_columns(current_view)
-                extract_abilities_from_text(abilities_column.extract_text())
+                left_view, right_view = crop_whole_page_to_ap_column_views_on_card(page, card)
+                print(f"{custom_extract_text(left_view)}\n")
+                print(f"{custom_extract_text(right_view)}\n")
+                print("=== LEFT SUBHEADERS ===")
+                for marker in extract_subheader_markers_from_view(left_view):
+                    print(marker)
+                print()
+                print("=== RIGHT SUBHEADERS ===")
+                for marker in extract_subheader_markers_from_view(right_view):
+                    print(marker)
+                print()
             for new_rpgclass_name, new_rpgclass in new_rpgclasses.items():
                 all_rpgclasses[new_rpgclass_name] |= new_rpgclass
     # print(json.dumps(all_rpgclasses, indent=4))
