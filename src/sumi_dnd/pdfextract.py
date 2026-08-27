@@ -47,7 +47,7 @@ PASSIVE_COLUMN_INDENT_PCT = 0.2
 
 repo_dir = Path(__file__).resolve().parents[2]
 dm_dir = repo_dir / "dm"
-pdf_path = dm_dir / "class_template.pdf"
+pdf_path = dm_dir / "class_knight.pdf"
 
 #-------------------------------------------------------------------------------------------------+
 #   META ANALYSIS
@@ -140,8 +140,8 @@ def crop_to_abilities_and_passives_columns(page):
     # box: left, top, right, bottom
     box_a = (0, 0, split_x, page.height)
     box_p = (split_x, 0, page.width, page.height)
-    view_a = page.crop(box_a)
-    view_p = page.crop(box_p)
+    view_a = page.crop(box_a, relative=True)
+    view_p = page.crop(box_p, relative=True)
     return view_a, view_p
 
 #-------------------------------------------------------------------------------------------------+
@@ -170,7 +170,7 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
 #-------------------------------------------------------------------------------------------------+
 
 def find_first_instance_of_word_in_page(keyword, page, case_sensitive=False):
-    words = page.extract_words()
+    words = page.extract_words(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
     for word in words:
         text = word["text"]
         if case_sensitive and (text == keyword):
@@ -228,6 +228,9 @@ def extract_stats_from_text(text):
     new_rpgclasses[new_rpgclass_name] = new_rpgclass
     return new_rpgclasses
 
+def extract_abilities_from_text(text):
+    print(text)
+
 #-------------------------------------------------------------------------------------------------+
 #   ORCHESTRATION
 #-------------------------------------------------------------------------------------------------+
@@ -245,7 +248,8 @@ with pdfplumber.open(pdf_path) as pdf:
             if is_stat_card:
                 new_rpgclasses = extract_stats_from_text(current_text)
             if is_skill_card:
-                print("Found a skill card!")
+                abilities_column, passives_column = crop_to_abilities_and_passives_columns(current_view)
+                extract_abilities_from_text(abilities_column.extract_text())
             for new_rpgclass_name, new_rpgclass in new_rpgclasses.items():
                 all_rpgclasses[new_rpgclass_name] |= new_rpgclass
     # print(json.dumps(all_rpgclasses, indent=4))
