@@ -1,7 +1,12 @@
-# Glossary
+# GLOSSARY
+# card          refers to the background image used for all stat and skill cards
+# view          a cropped page
 # nsc           non-stroking color
 # cformat       char format
 # cmformat      comment format
+
+# NAMING CONVENTIONS
+# "Passives" and "abilities" are in plural when refering to their respective columns.
 
 import pdfplumber
 import math
@@ -20,7 +25,8 @@ CARD_VSPLIT_OFFSET = 5 # Split some distance to the right of where Passive start
 MARKERS_MAIN_STATS = ["Main"]
 MARKERS_SUB_STATS = ["Simplified", "Sub"]
 MARKERS_BONUS_ATTS = ["Simplified", "Bonus"]
-MARKERS_SKILL_CARD = ["abilities"]
+MARKERS_SKILL_CARD = ["Class abilities"]
+MARKER_PASSIVE_COLUMN = "passive" # Search the card for this term.
 MARKERS_ITALICS = ["italic", "oblique"]
 MARKERS_BOLD = ["bold", "bd", "heavy", "thick", "blk", "black", "medi"]
 
@@ -29,15 +35,19 @@ CMFORMAT_NSC = (0.5725, 0.5725, 0.5725) # This assumes DeviceRGB.
 CMFORMAT_NSC_BUFFER = 0.075
 
 # A default is set for these values by pdfplumber.
-EXTRACT_TEXT_X_TOLERANCE = 0
-EXTRACT_TEXT_Y_TOLERANCE = 0
+EXTRACT_TEXT_X_TOLERANCE = 0.05
+EXTRACT_TEXT_Y_TOLERANCE = 0.05
+
+# Sometimes the abilities column bleeds into the passives column.
+# This indent is expressed as a percentage of the width of the "Passive" subheader.
+PASSIVE_COLUMN_INDENT_PCT = 0.2
 
 # For the left card we'll go by markers in the text itself.
 # For the right card we'll assume only that subheaders are bold, and uniquely so.
 
 repo_dir = Path(__file__).resolve().parents[2]
 dm_dir = repo_dir / "dm"
-pdf_path = dm_dir / "class_warrior.pdf"
+pdf_path = dm_dir / "class_template.pdf"
 
 #-------------------------------------------------------------------------------------------------+
 #   META ANALYSIS
@@ -121,6 +131,19 @@ def crop_to_image_vsplit(page, image, split_x): # Can't get CroppedPage bounds i
     right_view = page.crop(right_box)
     return left_view, right_view
 
+def crop_to_abilities_and_passives_columns(page):
+    # p: passives, a: abilities
+    p_subheader = find_first_instance_of_word_in_page(MARKER_PASSIVE_COLUMN, page)
+    p_subheader_width = p_subheader["x1"] - p_subheader["x0"]
+    indent = p_subheader_width * PASSIVE_COLUMN_INDENT_PCT
+    split_x = p_subheader["x0"] + indent
+    # box: left, top, right, bottom
+    box_a = (0, 0, split_x, page.height)
+    box_p = (split_x, 0, page.width, page.height)
+    view_a = page.crop(box_a)
+    view_p = page.crop(box_p)
+    return view_a, view_p
+
 #-------------------------------------------------------------------------------------------------+
 #   FILTERS FOR PAGE.FILTER()
 #-------------------------------------------------------------------------------------------------+
@@ -141,6 +164,19 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
         if is_bold:
             return True
     return False
+
+#-------------------------------------------------------------------------------------------------+
+#   PAGE SEARCH
+#-------------------------------------------------------------------------------------------------+
+
+def find_first_instance_of_word_in_page(keyword, page, case_sensitive=False):
+    words = page.extract_words()
+    for word in words:
+        text = word["text"]
+        if case_sensitive and (text == keyword):
+            return word
+        if (not case_sensitive) and (text.lower() == keyword.lower()):
+            return word
 
 #-------------------------------------------------------------------------------------------------+
 #   EXTRACTION
@@ -208,7 +244,10 @@ with pdfplumber.open(pdf_path) as pdf:
             new_rpgclasses = {}
             if is_stat_card:
                 new_rpgclasses = extract_stats_from_text(current_text)
+            if is_skill_card:
+                print("Found a skill card!")
             for new_rpgclass_name, new_rpgclass in new_rpgclasses.items():
                 all_rpgclasses[new_rpgclass_name] |= new_rpgclass
-    with open(r"C:\Users\tjames\Desktop\extracted_classes.json", "w", encoding="utf-8") as f:
-        json.dump(all_rpgclasses, f, indent=4, ensure_ascii=False)
+    # print(json.dumps(all_rpgclasses, indent=4))
+    # with open(r"C:\Users\tjames\Desktop\extracted_classes.json", "w", encoding="utf-8") as f:
+        # json.dump(all_rpgclasses, f, indent=4, ensure_ascii=False)
