@@ -12,6 +12,7 @@
 import pdfplumber
 import math
 import json
+import re
 from pathlib import Path
 from collections import defaultdict
 
@@ -29,8 +30,12 @@ MARKERS_BONUS_ATTS = ["Simplified", "Bonus"]
 MARKERS_SKILL_CARD = ["Class abilities"]
 MARKER_PASSIVE_COLUMN = "passive" # Search the card for this term.
 MARKER_SUBCLASS_FOOTER = "subclass"
+SUBCLASS_FOOTER_BUFFER_PCT = 0.1
 MARKERS_ITALICS = ["italic", "oblique"]
 MARKERS_BOLD = ["bold", "bd", "heavy", "thick", "blk", "black", "medi"]
+
+# Experimental feature where I split the flat text like delimiters
+MARKERS_STAT_CARD = ["main stats", "simplified", "sub stats", "main", "sub"]
 
 # We assume that all comments are roughly this color and italic.
 CMFORMAT_NSC = (0.5725, 0.5725, 0.5725) # This assumes DeviceRGB.
@@ -88,6 +93,14 @@ def confirm_any_marker_in_text(markers, text, case_sensitive=False):
             if marker.lower() in text.lower():
                 return True
     return False
+
+def split_text_by_markers(text, markers):
+    markers = sorted(markers, key=len, reverse=True)
+    pattern = "|".join(map(re.escape, markers))
+    tokens = re.split(f"{pattern}", text)
+    tokens = [token.strip() for token in tokens]
+    tokens = [token for token in tokens if len(token) > 0]
+    return tokens
 
 #-------------------------------------------------------------------------------------------------+
 #   FORMAT MATCHING
@@ -155,7 +168,12 @@ def crop_whole_page_to_ap_column_views_on_card(page, card):
     top = cheader["bottom"] + shave
     # Crop out the "subclasses" footer.
     footer = find_first_instance_of_word_in_page(MARKER_SUBCLASS_FOOTER, card_view)
-    box_bottom = footer["top"] if footer else card["bottom"]
+    if footer:
+        footer_height = footer["bottom"] - footer["top"]
+        footer_buffer = footer_height * SUBCLASS_FOOTER_BUFFER_PCT
+        box_bottom = footer["top"] - footer_buffer
+    else:
+        box_bottom = card["bottom"]
     # Crop the original page into the columns. I think it's easier that way.
     left_box = (card["x0"], top, split_x, box_bottom)
     right_box = (split_x, top, card["x1"], box_bottom)
@@ -197,7 +215,7 @@ def extract_cards_from_page(page):
     cards = [image for image in images if confirm_image_is_card(image)]
     return cards
 
-def extract_subheader_markers_from_view(view):
+def extract_subheaders_from_view(view):
     filtered_page = view.filter(filter_keep_subheaders)
     text = custom_extract_text(filtered_page)
     markers = text.split("\n")
@@ -259,16 +277,14 @@ with pdfplumber.open(pdf_path) as pdf:
                 new_rpgclasses = extract_stats_from_text(current_text)
             if is_skill_card:
                 left_view, right_view = crop_whole_page_to_ap_column_views_on_card(page, card)
-                print(f"{custom_extract_text(left_view)}\n")
-                print(f"{custom_extract_text(right_view)}\n")
-                print("=== LEFT SUBHEADERS ===")
-                for marker in extract_subheader_markers_from_view(left_view):
-                    print(marker)
-                print()
-                print("=== RIGHT SUBHEADERS ===")
-                for marker in extract_subheader_markers_from_view(right_view):
-                    print(marker)
-                print()
+                left_text = custom_extract_text(left_view)
+                left_markers = extract_subheaders_from_view(left_view)
+                right_text = custom_extract_text(right_view)
+                right_markers = extract_subheaders_from_view(right_view)
+                for token in split_text_by_markers(left_text, left_markers):
+                    print(token)
+                    print("[end]")
+                print(f"============================")
             for new_rpgclass_name, new_rpgclass in new_rpgclasses.items():
                 all_rpgclasses[new_rpgclass_name] |= new_rpgclass
     # print(json.dumps(all_rpgclasses, indent=4))
