@@ -28,6 +28,7 @@ MARKERS_SUB_STATS = ["Simplified", "Sub"]
 MARKERS_BONUS_ATTS = ["Simplified", "Bonus"]
 MARKERS_SKILL_CARD = ["Class abilities"]
 MARKER_PASSIVE_COLUMN = "passive" # Search the card for this term.
+MARKER_SUBCLASS_FOOTER = "subclass"
 MARKERS_ITALICS = ["italic", "oblique"]
 MARKERS_BOLD = ["bold", "bd", "heavy", "thick", "blk", "black", "medi"]
 
@@ -152,9 +153,12 @@ def crop_whole_page_to_ap_column_views_on_card(page, card):
     shave = cheader_height * COLUMN_HEADER_BUFFER_PCT
     split_x = cheader["x0"] + indent
     top = cheader["bottom"] + shave
+    # Crop out the "subclasses" footer.
+    footer = find_first_instance_of_word_in_page(MARKER_SUBCLASS_FOOTER, card_view)
+    box_bottom = footer["top"] if footer else card["bottom"]
     # Crop the original page into the columns. I think it's easier that way.
-    left_box = (card["x0"], top, split_x, card["bottom"])
-    right_box = (split_x, top, card["x1"], card["bottom"])
+    left_box = (card["x0"], top, split_x, box_bottom)
+    right_box = (split_x, top, card["x1"], box_bottom)
     left_view = page.crop(left_box)
     right_view = page.crop(right_box)
     return left_view, right_view
