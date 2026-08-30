@@ -94,13 +94,45 @@ def confirm_any_marker_in_text(markers, text, case_sensitive=False):
                 return True
     return False
 
-def split_text_by_markers(text, markers):
-    markers = sorted(markers, key=len, reverse=True)
-    pattern = "|".join(map(re.escape, markers))
-    tokens = re.split(f"{pattern}", text)
-    tokens = [token.strip() for token in tokens]
-    tokens = [token for token in tokens if len(token) > 0]
-    return tokens
+def split_text_by_nearest_marker(text, markers):
+    remaining_text = text.strip()
+    remaining_markers = sorted(markers, key=len, reverse=True)
+
+    no_markers_left = len(remaining_markers) == 0
+    if no_markers_left:
+        return [remaining_text]
+
+    nearest_marker_found = None
+    nearest_marker_spot = None
+    for this_marker in remaining_markers:
+        this_marker_spot = text.find(this_marker)
+        no_marker_found = this_marker_spot == -1
+        marker_found = not no_marker_found
+        if marker_found:
+            first_place_unclaimed = nearest_marker_spot is None
+            if first_place_unclaimed:
+                nearest_marker_spot = this_marker_spot
+                nearest_marker_found = this_marker
+            else:
+                this_is_the_nearest_marker = this_marker_spot < nearest_marker_spot
+                if this_is_the_nearest_marker:
+                    nearest_marker_spot = this_marker_spot
+                    nearest_marker_found = this_marker
+
+    no_marker_found = nearest_marker_found is None
+    if no_marker_found:
+        return [remaining_text]
+    else:
+        split_spot = nearest_marker_spot + len(nearest_marker_found)
+        eaten_text = text[:nearest_marker_spot].strip()
+        later_text = text[split_spot:]
+
+    remaining_markers = [marker for marker in remaining_markers if marker != nearest_marker_found]
+    message_from_future = split_text_by_nearest_marker(later_text, remaining_markers)
+    if eaten_text:
+        return [eaten_text.strip()] + message_from_future
+    else:
+        return message_from_future
 
 #-------------------------------------------------------------------------------------------------+
 #   FORMAT MATCHING
@@ -290,9 +322,10 @@ with pdfplumber.open(pdf_path) as pdf:
                 left_markers = extract_subheaders_from_view(left_view)
                 right_text = custom_extract_text(right_view)
                 right_markers = extract_subheaders_from_view(right_view)
-                for token in split_text_by_markers(left_text, left_markers):
+                for token in split_text_by_nearest_marker(left_text, left_markers):
                     print(token)
                     print("-")
+                print("KNOWN SUBHEADERS:", ", ".join(left_markers))
                 print(f"============================")
             for new_rpgclass_name, new_rpgclass in new_rpgclasses.items():
                 all_rpgclasses[new_rpgclass_name] |= new_rpgclass
