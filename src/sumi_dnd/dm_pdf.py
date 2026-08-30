@@ -221,6 +221,15 @@ def extract_subheaders_from_view(view):
     markers = text.split("\n")
     return markers
 
+def parse_ability_text(text):
+    # Assume all abilities have text in format: "CD: 1" or "CD: 1 Cost: 1 MP"
+    pattern = r"CD:\s*(\d+)(?:\s*Cost:\s*(\d+)\s*MP)?\s*\n(.*)"
+    match = re.search(pattern, text)
+    if match:
+        groups = [group for group in match.groups() if group is not None]
+        return groups
+    return []
+
 def extract_stats_from_text(text):
     new_rpgclass = {
         "def": "",
@@ -283,7 +292,7 @@ with pdfplumber.open(pdf_path) as pdf:
                 right_markers = extract_subheaders_from_view(right_view)
                 for token in split_text_by_markers(left_text, left_markers):
                     print(token)
-                    print("[end]")
+                    print("-")
                 print(f"============================")
             for new_rpgclass_name, new_rpgclass in new_rpgclasses.items():
                 all_rpgclasses[new_rpgclass_name] |= new_rpgclass
