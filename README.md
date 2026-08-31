@@ -4,7 +4,7 @@ I'm only pushing this now as backup.
 
 
 
-##### About
+### About
 
 
 
@@ -12,7 +12,7 @@ sumi\_dnd is a specialized Canva PDF parser and search interface layer for Realm
 
 
 
-##### dm/
+### dm/
 
 
 
@@ -20,7 +20,7 @@ sumi\_dnd is a specialized Canva PDF parser and search interface layer for Realm
 
 
 
-##### dm\_pdf.py
+### dm\_pdf.py
 
 
 
@@ -43,4 +43,14 @@ sumi\_dnd is a specialized Canva PDF parser and search interface layer for Realm
 
 
 Basically, the program assumes that all class cards look as seen in **dm/class\_template.pdf**.
+
+
+
+### Credits
+
+
+
+Tristan Bonaobra (Author)
+
+Zedryck Pugayan (Assets)
 
