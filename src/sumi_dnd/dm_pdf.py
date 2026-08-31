@@ -31,10 +31,12 @@ MARKERS_SKILL_CARD = ["Class abilities"]
 MARKER_PASSIVE_COLUMN = "passive" # Search the card for this term.
 MARKER_SUBCLASS_FOOTER = "subclass"
 SUBCLASS_FOOTER_BUFFER_PCT = 0.1
+MARKER_CD = "CD"
+MARKER_MP = "MP"
+
 MARKERS_ITALICS = ["italic", "oblique"]
 MARKERS_BOLD = ["bold", "bd", "heavy", "thick", "blk", "black", "medi"]
 
-# Experimental feature where I split the flat text like delimiters
 MARKERS_STAT_CARD = ["main stats", "simplified", "sub stats", "main", "sub"]
 
 # We assume that all comments are roughly this color and italic.
@@ -158,9 +160,8 @@ def confirm_char_matches_cmformat(char):
 #   PAGE SEARCH
 #-------------------------------------------------------------------------------------------------+
 
-def find_first_instance_of_word_in_page(keyword, page, case_sensitive=False):
-    words = page.extract_words(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
-    for word in words:
+def find_first_instance_of_word_in_page_words(keyword, page_words, case_sensitive=False):
+    for word in page_words:
         text = word["text"]
         if case_sensitive and (text == keyword):
             return word
@@ -191,7 +192,10 @@ def crop_page_to_image(page, image):
 def crop_whole_page_to_ap_column_views_on_card(page, card):
     card_view = crop_page_to_image(page, card)
     # cheader: column header
-    cheader = find_first_instance_of_word_in_page(MARKER_PASSIVE_COLUMN, card_view) # The subheader at which to split.
+    page_words = custom_extract_words(card_view)
+    cheader = find_first_instance_of_word_in_page_words(MARKER_PASSIVE_COLUMN, page_words) # The subheader at which to split.
+    if cheader is None:
+        return
     cheader_width = cheader["x1"] - cheader["x0"]
     cheader_height = cheader["bottom"] - cheader["top"]
     indent = cheader_width * PASSIVE_COLUMN_INDENT_PCT
@@ -199,7 +203,7 @@ def crop_whole_page_to_ap_column_views_on_card(page, card):
     split_x = cheader["x0"] + indent
     top = cheader["bottom"] + shave
     # Crop out the "subclasses" footer.
-    footer = find_first_instance_of_word_in_page(MARKER_SUBCLASS_FOOTER, card_view)
+    footer = find_first_instance_of_word_in_page_words(MARKER_SUBCLASS_FOOTER, page_words)
     if footer:
         footer_height = footer["bottom"] - footer["top"]
         footer_buffer = footer_height * SUBCLASS_FOOTER_BUFFER_PCT
@@ -241,6 +245,10 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
 def custom_extract_text(page): # Not to be confused with page.extract_text()
     text = page.extract_text(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
     return text
+
+def custom_extract_words(page): # Not to be confused with page.extract_words()
+    words = page.extract_words(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
+    return words
 
 def extract_cards_from_page(page):
     images = page.images
@@ -329,6 +337,4 @@ with pdfplumber.open(pdf_path) as pdf:
                 print(f"============================")
             for new_rpgclass_name, new_rpgclass in new_rpgclasses.items():
                 all_rpgclasses[new_rpgclass_name] |= new_rpgclass
-    # print(json.dumps(all_rpgclasses, indent=4))
-    # with open(r"C:\Users\tjames\Desktop\extracted_classes.json", "w", encoding="utf-8") as f:
-        # json.dump(all_rpgclasses, f, indent=4, ensure_ascii=False)
+    print(json.dumps(all_rpgclasses, indent=4))
