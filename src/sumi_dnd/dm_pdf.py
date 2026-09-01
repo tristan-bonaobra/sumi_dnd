@@ -5,6 +5,7 @@
 # cformat       char format
 # cmformat      comment format
 # ap            abilities and passives
+# def           definition
 
 # NAMING CONVENTIONS
 # "Passives" and "abilities" are in plural when refering to their respective columns.
@@ -239,7 +240,7 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
     return False
 
 #-------------------------------------------------------------------------------------------------+
-#   EXTRACTION
+#   EXTRACTION SUITE
 #-------------------------------------------------------------------------------------------------+
 
 def custom_extract_text(page): # Not to be confused with page.extract_text()
@@ -269,6 +270,10 @@ def parse_ability_text(text):
         groups = [group for group in match.groups() if group is not None]
         return groups
     return []
+
+#-------------------------------------------------------------------------------------------------+
+#   EXTRACTION MAIN
+#-------------------------------------------------------------------------------------------------+
 
 def extract_stats_from_text(text):
     new_rpgclass = {
@@ -305,8 +310,18 @@ def extract_stats_from_text(text):
     new_rpgclasses[new_rpgclass_name] = new_rpgclass
     return new_rpgclasses
 
-def extract_abilities_from_text(text):
-    print("Hello world!")
+def extract_passives_from_column_view(right_view):
+    right_text = custom_extract_text(right_view)
+    passive_names = extract_subheaders_from_view(right_view)
+    passive_defs = split_text_by_nearest_marker(right_text, passive_names)
+    new_passives = []
+    for key, passive_name in enumerate(passive_names):
+        new_passive = {
+            "name": passive_name,
+            "def": passive_defs[key]
+        }
+        new_passives.append(new_passive)
+    return new_passives
 
 #-------------------------------------------------------------------------------------------------+
 #   ORCHESTRATION
@@ -325,16 +340,11 @@ with pdfplumber.open(pdf_path) as pdf:
             if is_stat_card:
                 new_rpgclasses = extract_stats_from_text(current_text)
             if is_skill_card:
-                left_view, right_view = crop_whole_page_to_ap_column_views_on_card(page, card)
-                left_text = custom_extract_text(left_view)
-                left_markers = extract_subheaders_from_view(left_view)
-                right_text = custom_extract_text(right_view)
-                right_markers = extract_subheaders_from_view(right_view)
-                for token in split_text_by_nearest_marker(left_text, left_markers):
-                    print(token)
-                    print("-")
-                print("KNOWN SUBHEADERS:", ", ".join(left_markers))
-                print(f"============================")
+                left_column_view, right_column_view = crop_whole_page_to_ap_column_views_on_card(page, card)
+                new_passives = extract_passives_from_column_view(right_column_view)
+                new_passives_json_string = json.dumps(new_passives, indent=4)
+                new_passives_json_string = new_passives_json_string.replace("\\n", " ")
+                print(new_passives_json_string)
             for new_rpgclass_name, new_rpgclass in new_rpgclasses.items():
                 all_rpgclasses[new_rpgclass_name] |= new_rpgclass
     print(json.dumps(all_rpgclasses, indent=4))
