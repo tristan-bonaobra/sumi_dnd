@@ -4,7 +4,6 @@
 # nsc           non-stroking color
 # cformat       char format
 # cmformat      comment format
-# ap            abilities and passives
 # def           definition
 # skill         ability or passive
 
@@ -25,22 +24,20 @@ expected_card_ratio = TEMPLATE_CARD_WIDTH / TEMPLATE_CARD_HEIGHT
 CARD_RATIO_BUFFER_PCT = 0.025
 CARD_VSPLIT_OFFSET = 5 # Split some distance to the right of where Passive starts
 
-# List all possible forms of the same functional marker
-# Old stuff might remove
-MARKERS_MAIN_STATS = ["Main"]
-MARKERS_SUB_STATS = ["Simplified", "Sub"]
-MARKERS_BONUS_ATTS = ["Simplified", "Bonus"]
-
 # Split the stat card by whatever comes first.
 SUBHEADERS_STAT_CARD = ["main", "main stat", "sub", "sub stat", "simplified", "bonus", "bonus attribute"]
 
 # This tells us we're looking at a skill card.
-MARKERS_SKILL_CARD = ["Class abilities"]
+MARKERS_SKILL_CARD = ["class abilities"]
 
 # We split the skill card where these words appears.
 MARKER_PASSIVE_COLUMN = "passive"
 MARKER_SUBCLASS_FOOTER = "subclass"
 SUBCLASS_FOOTER_BUFFER_PCT = 0.1
+
+# Sometimes the abilities column bleeds into the passives column.
+# This indent is expressed as a percentage of the width of the "Passive" subheader.
+PASSIVE_COLUMN_INDENT_PCT = 0.2
 
 # Note: Utilize these...
 MARKER_CD = "CD"
@@ -59,10 +56,6 @@ CMFORMAT_NSC_BUFFER = 0.075
 EXTRACT_TEXT_X_TOLERANCE = 0.05
 EXTRACT_TEXT_Y_TOLERANCE = 0.05
 
-# Sometimes the abilities column bleeds into the passives column.
-# This indent is expressed as a percentage of the width of the "Passive" subheader.
-PASSIVE_COLUMN_INDENT_PCT = 0.2
-
 # Crop headers starting from some space underneath the column header.
 # "Passive" gets split due to the indent. It's noise, anyway.
 COLUMN_HEADER_BUFFER_PCT = 0.5
@@ -75,48 +68,10 @@ dm_dir = repo_dir / "dm"
 pdf_path = dm_dir / "class_knight.pdf"
 
 #-------------------------------------------------------------------------------------------------+
-#   EXTRACTION MAIN
+#   STAT CARDS
 #-------------------------------------------------------------------------------------------------+
 
-# I'm considering the smallest thing we can work with for each chunk of data that we want.
-
-# Maybe this function should be making use of split_text_by_nearest_marker.
-def extract_stats_from_text(text):
-    new_rpgclass = {
-        "def": "",
-        "main": [],
-        "sub": [],
-        "bonus_atts": []
-    }
-    new_rpgclass_name = None
-    step = 0 # 1:Init, 2:Main, 3:Sub, 4:Bonus
-    # We're forcing an order here because sometimes "Simplified" can mean either sub stats or bonus attributes.
-    for key, line in enumerate(text.split("\n")):
-        stripped_line = line.rstrip()
-        stat = stripped_line.upper()
-        extracting_main = confirm_any_marker_in_text(MARKERS_MAIN_STATS, line)
-        extracting_bonus_atts = confirm_any_marker_in_text(MARKERS_BONUS_ATTS, line)
-        extracting_sub = confirm_any_marker_in_text(MARKERS_SUB_STATS, line)
-        if extracting_main and (step == 0):
-            step = 1
-            continue # Skip the subheader
-        elif extracting_sub and (step == 1):
-            step = 2
-            continue
-        elif extracting_bonus_atts and (step == 2):
-            step = 3
-            continue
-        if step == 0:
-            if key == 0: new_rpgclass_name = stripped_line
-            else: new_rpgclass["def"] += line # From here on out assume rpgclass exists
-        elif step == 1: new_rpgclass["main"].append(stat)
-        elif step == 2: new_rpgclass["sub"].append(stat)
-        elif step == 3: new_rpgclass["bonus_atts"].append(line)
-    new_rpgclasses = {}
-    new_rpgclasses[new_rpgclass_name] = new_rpgclass
-    return new_rpgclasses
-
-def parse_stat_card_text(text):
+def extract_data_from_stat_card_text(text):
     body = split_text_by_nearest_marker(text, SUBHEADERS_STAT_CARD)
     extracted_data = {
         "name": body[0].split("\n")[0]
@@ -128,6 +83,10 @@ def parse_stat_card_text(text):
     if body[3]:
         extracted_data["bonus_atts"] = body[3].split("\n")
     return extracted_data
+
+#-------------------------------------------------------------------------------------------------+
+#   SKILL CARDS
+#-------------------------------------------------------------------------------------------------+
 
 def extract_skills_from_column_view(view):
     skill_names = extract_subheaders_from_view(view)
@@ -148,31 +107,6 @@ def extract_skills_from_column_view(view):
         new_skills.append(new_skill)
     return new_skills
 
-#-------------------------------------------------------------------------------------------------+
-#   EXTRACTION SUITE
-#-------------------------------------------------------------------------------------------------+
-
-def find_first_instance_of_word_in_page_words(keyword, page_words, case_sensitive=False):
-    for word in page_words:
-        text = word["text"]
-        if case_sensitive and (text == keyword):
-            return word
-        if (not case_sensitive) and (text.lower() == keyword.lower()):
-            return word
-
-def custom_extract_text(page): # Not to be confused with page.extract_text()
-    text = page.extract_text(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
-    return text
-
-def custom_extract_words(page): # Not to be confused with page.extract_words()
-    words = page.extract_words(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
-    return words
-
-def extract_cards_from_page(page):
-    images = page.images
-    cards = [image for image in images if confirm_image_is_card(image)]
-    return cards
-
 def extract_subheaders_from_view(view):
     filtered_page = view.filter(filter_keep_subheaders)
     text = custom_extract_text(filtered_page)
@@ -188,38 +122,8 @@ def extract_cd_and_cost_from_skill_text(text):
     return cd, cost
 
 #-------------------------------------------------------------------------------------------------+
-#   META ANALYSIS
+#   ALL CARDS
 #-------------------------------------------------------------------------------------------------+
-
-def analyze_chars(page):
-    # cformats structure:
-    # {
-    #      (size, is_italic, nsc): [char, char, char],
-    #      (size, is_italic, nsc): [char, char, char]
-    # }
-    cformats = defaultdict(list)
-    for char in page.chars:
-        size = char["size"]
-        fontname = char["fontname"]
-        is_italic = confirm_any_marker_in_text(MARKERS_ITALICS, char["fontname"])
-        nsc = char["non_stroking_color"]
-        key = (size, fontname, is_italic, nsc)
-        cformat = cformats[key]
-        cformat.append(char)
-    for (size, fontname, is_italic, nsc), chars in cformats.items():
-        joined_chars = "".join(char["text"] for char in chars)
-        print(size, fontname, "is_italic:" + str(is_italic), nsc, joined_chars)
-    return cformats
-
-def confirm_any_marker_in_text(markers, text, case_sensitive=False):
-    for marker in markers:
-        if case_sensitive:
-            if marker in text:
-                return True
-        else:
-            if marker.lower() in text.lower():
-                return True
-    return False
 
 def split_text_by_nearest_marker(text, markers):
     remaining_text = text.strip()
@@ -261,9 +165,64 @@ def split_text_by_nearest_marker(text, markers):
     else:
         return message_from_future
 
+def find_first_instance_of_word_in_page_words(keyword, page_words, case_sensitive=False):
+    for word in page_words:
+        text = word["text"]
+        if case_sensitive and (text == keyword):
+            return word
+        if (not case_sensitive) and (text.lower() == keyword.lower()):
+            return word
+
 #-------------------------------------------------------------------------------------------------+
-#   FORMAT MATCHING
+#   EXTRACTION SUITE
 #-------------------------------------------------------------------------------------------------+
+
+def extract_cards_from_page(page):
+    images = page.images
+    cards = [image for image in images if confirm_image_is_card(image)]
+    return cards
+
+#-------------------------------------------------------------------------------------------------+
+#   META ANALYSIS STUFF
+#-------------------------------------------------------------------------------------------------+
+
+def analyze_chars(page):
+    # cformats structure:
+    # {
+    #      (size, is_italic, nsc): [char, char, char],
+    #      (size, is_italic, nsc): [char, char, char]
+    # }
+    cformats = defaultdict(list)
+    for char in page.chars:
+        size = char["size"]
+        fontname = char["fontname"]
+        is_italic = confirm_any_marker_in_text(MARKERS_ITALICS, char["fontname"])
+        nsc = char["non_stroking_color"]
+        key = (size, fontname, is_italic, nsc)
+        cformat = cformats[key]
+        cformat.append(char)
+    for (size, fontname, is_italic, nsc), chars in cformats.items():
+        joined_chars = "".join(char["text"] for char in chars)
+        print(size, fontname, "is_italic:" + str(is_italic), nsc, joined_chars)
+    return cformats
+
+def confirm_any_marker_in_text(markers, text, case_sensitive=False):
+    for marker in markers:
+        if case_sensitive:
+            if marker in text:
+                return True
+        else:
+            if marker.lower() in text.lower():
+                return True
+    return False
+
+def custom_extract_text(page): # Not to be confused with page.extract_text()
+    text = page.extract_text(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
+    return text
+
+def custom_extract_words(page): # Not to be confused with page.extract_words()
+    words = page.extract_words(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
+    return words
 
 def confirm_image_is_card(image):
     image_width = image["width"]
@@ -282,27 +241,10 @@ def confirm_char_matches_cmformat(char):
     return is_cmformat
 
 #-------------------------------------------------------------------------------------------------+
-#   CROP TO VIEW
+#   CROPPING
 #-------------------------------------------------------------------------------------------------+
 
-def clamp(x, v_min, v_max):
-    return max(v_min, min(x, v_max))
-
-def clamp_box_to_page(box, page):
-    old_x0, old_y0, old_x1, old_y1 = box
-    new_x0 = clamp(old_x0, 0, page.width)
-    new_y0 = clamp(old_y0, 0, page.height)
-    new_x1 = clamp(old_x1, 0, page.width)
-    new_y1 = clamp(old_y1, 0, page.height)
-    return (new_x0, new_y0, new_x1, new_y1)
-
-def crop_page_to_image(page, image):
-    box = (image["x0"], image["top"], image["x1"], image["bottom"])
-    box = clamp_box_to_page(box, page)
-    view = page.crop(box)
-    return view
-
-def crop_whole_page_to_ap_column_views_on_card(page, card):
+def crop_whole_page_to_skill_column_views_on_card(page, card):
     card_view = crop_page_to_image(page, card)
     # cheader: column header
     page_words = custom_extract_words(card_view)
@@ -330,6 +272,23 @@ def crop_whole_page_to_ap_column_views_on_card(page, card):
     right_view = page.crop(right_box)
     return left_view, right_view
 
+def crop_page_to_image(page, image):
+    box = (image["x0"], image["top"], image["x1"], image["bottom"])
+    box = clamp_box_to_page(box, page)
+    view = page.crop(box)
+    return view
+
+def clamp_box_to_page(box, page):
+    old_x0, old_y0, old_x1, old_y1 = box
+    new_x0 = clamp(old_x0, 0, page.width)
+    new_y0 = clamp(old_y0, 0, page.height)
+    new_x1 = clamp(old_x1, 0, page.width)
+    new_y1 = clamp(old_y1, 0, page.height)
+    return (new_x0, new_y0, new_x1, new_y1)
+
+def clamp(x, v_min, v_max):
+    return max(v_min, min(x, v_max))
+
 #-------------------------------------------------------------------------------------------------+
 #   FILTERS FOR PAGE.FILTER()
 #-------------------------------------------------------------------------------------------------+
@@ -356,9 +315,6 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
 #-------------------------------------------------------------------------------------------------+
 
 with pdfplumber.open(pdf_path) as pdf:
-    all_stat_card_extracts = defaultdict(dict)
-    all_abilities = []
-    all_passives = []
     for page in pdf.pages:
         for card in extract_cards_from_page(page):
             current_view = crop_page_to_image(page, card)
@@ -368,11 +324,13 @@ with pdfplumber.open(pdf_path) as pdf:
             is_stat_card = not is_skill_card
             new_rpgclasses = {}
             if is_stat_card:
-                asd = parse_stat_card_text(current_text)
-                print(json.dumps(asd, indent=4))
+                asd = extract_data_from_stat_card_text(current_text)
             if is_skill_card:
-                left_column_view, right_column_view = crop_whole_page_to_ap_column_views_on_card(page, card)
+                left_column_view, right_column_view = crop_whole_page_to_skill_column_views_on_card(page, card)
                 new_abilities = extract_skills_from_column_view(left_column_view)
                 new_passives = extract_skills_from_column_view(right_column_view)
-                all_abilities.extend(new_abilities)
-                all_passives.extend(new_passives)
+                class_name = split_text_by_nearest_marker(current_text, MARKERS_SKILL_CARD)[0][:-1]
+
+                print()
+                print(class_name)
+                print(json.dumps(new_abilities, indent=4))
