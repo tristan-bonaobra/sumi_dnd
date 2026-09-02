@@ -116,6 +116,19 @@ def extract_stats_from_text(text):
     new_rpgclasses[new_rpgclass_name] = new_rpgclass
     return new_rpgclasses
 
+def parse_stat_card_text(text):
+    body = split_text_by_nearest_marker(text, SUBHEADERS_STAT_CARD)
+    extracted_data = {
+        "name": body[0].split("\n")[0]
+    }
+    if body[1]:
+        extracted_data["main_stats"] = body[1].split("\n")
+    if body[2]:
+        extracted_data["sub_stats"] = body[2].split("\n")
+    if body[3]:
+        extracted_data["bonus_atts"] = body[3].split("\n")
+    return extracted_data
+
 def extract_skills_from_column_view(view):
     skill_names = extract_subheaders_from_view(view)
     skill_text = custom_extract_text(view)
@@ -343,7 +356,7 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
 #-------------------------------------------------------------------------------------------------+
 
 with pdfplumber.open(pdf_path) as pdf:
-    all_rpgclasses = defaultdict(dict)
+    all_stat_card_extracts = defaultdict(dict)
     all_abilities = []
     all_passives = []
     for page in pdf.pages:
@@ -355,17 +368,11 @@ with pdfplumber.open(pdf_path) as pdf:
             is_stat_card = not is_skill_card
             new_rpgclasses = {}
             if is_stat_card:
-                new_rpgclasses = extract_stats_from_text(current_text)
+                asd = parse_stat_card_text(current_text)
+                print(json.dumps(asd, indent=4))
             if is_skill_card:
                 left_column_view, right_column_view = crop_whole_page_to_ap_column_views_on_card(page, card)
                 new_abilities = extract_skills_from_column_view(left_column_view)
                 new_passives = extract_skills_from_column_view(right_column_view)
                 all_abilities.extend(new_abilities)
                 all_passives.extend(new_passives)
-            for new_rpgclass_name, new_rpgclass in new_rpgclasses.items():
-                all_rpgclasses[new_rpgclass_name] |= new_rpgclass
-    with open(r"C:\Users\tjames\Desktop\abilities.json", "w") as f:
-        json.dump(all_abilities, f, indent=4)
-    with open(r"C:\Users\tjames\Desktop\passives.json", "w") as f:
-        json.dump(all_passives, f, indent=4)
-    # print(json.dumps(all_rpgclasses, indent=4))
