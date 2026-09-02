@@ -105,35 +105,24 @@ def extract_stats_from_text(text):
     new_rpgclasses[new_rpgclass_name] = new_rpgclass
     return new_rpgclasses
 
-def extract_passives_from_column_view(right_view):
-    right_text = custom_extract_text(right_view)
-    passive_names = extract_subheaders_from_view(right_view)
-    passive_defs = split_text_by_nearest_marker(right_text, passive_names)
-    new_passives = []
-    for key, passive_name in enumerate(passive_names):
-        new_passive = {
-            "name": passive_name,
-            "def": passive_defs[key]
+def extract_skills_from_column_view(view):
+    skill_names = extract_subheaders_from_view(view)
+    skill_text = custom_extract_text(view)
+    skill_defs = split_text_by_nearest_marker(skill_text, skill_names)
+    new_skills = []
+    for key, skill_name in enumerate(skill_names):
+        skill_def = skill_defs[key]
+        new_skill = {
+            "name": skill_name,
+            "def": skill_def,
         }
-        new_passives.append(new_passive)
-    return new_passives
-
-def extract_abilities_from_column_view(left_view):
-    ability_names = extract_subheaders_from_view(left_view)
-    left_text = custom_extract_text(left_view)
-    ability_defs = split_text_by_nearest_marker(left_text, ability_names)
-    new_abilities = []
-    for key, ability_name in enumerate(ability_names):
-        ability_def = ability_defs[key]
-        cd, mp_cost = extract_cd_and_cost_from_ability_text(ability_def)
-        new_ability = {
-            "name": ability_name,
-            "def": ability_def,
-            "cd": cd,
-            "mp_cost": mp_cost
-        }
-        new_abilities.append(new_ability)
-    return new_abilities
+        cd, mp_cost = extract_cd_and_cost_from_skill_text(skill_def)
+        if cd is not None:
+            new_skill["cd"] = cd
+        if mp_cost is not None:
+            new_skill["mp_cost"] = mp_cost
+        new_skills.append(new_skill)
+    return new_skills
 
 #-------------------------------------------------------------------------------------------------+
 #   EXTRACTION SUITE
@@ -166,7 +155,7 @@ def extract_subheaders_from_view(view):
     markers = text.split("\n")
     return markers
 
-def extract_cd_and_cost_from_ability_text(text):
+def extract_cd_and_cost_from_skill_text(text):
     # Assume all abilities contain text in format: "CD: 1 ..." or "CD: 1 Cost: 1 MP ..."
     cd_match = re.search(r"CD:\s*(\d+)", text)
     cost_match = re.search(r"Cost:\s*(\d+)", text)
@@ -345,6 +334,7 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
 with pdfplumber.open(pdf_path) as pdf:
     all_rpgclasses = defaultdict(dict)
     all_abilities = []
+    all_passives = []
     for page in pdf.pages:
         for card in extract_cards_from_page(page):
             current_view = crop_page_to_image(page, card)
@@ -357,10 +347,14 @@ with pdfplumber.open(pdf_path) as pdf:
                 new_rpgclasses = extract_stats_from_text(current_text)
             if is_skill_card:
                 left_column_view, right_column_view = crop_whole_page_to_ap_column_views_on_card(page, card)
-                new_abilities = extract_abilities_from_column_view(left_column_view)
+                new_abilities = extract_skills_from_column_view(left_column_view)
+                new_passives = extract_skills_from_column_view(right_column_view)
                 all_abilities.extend(new_abilities)
+                all_passives.extend(new_passives)
             for new_rpgclass_name, new_rpgclass in new_rpgclasses.items():
                 all_rpgclasses[new_rpgclass_name] |= new_rpgclass
     with open(r"C:\Users\tjames\Desktop\abilities.json", "w") as f:
         json.dump(all_abilities, f, indent=4)
+    with open(r"C:\Users\tjames\Desktop\passives.json", "w") as f:
+        json.dump(all_passives, f, indent=4)
     # print(json.dumps(all_rpgclasses, indent=4))
