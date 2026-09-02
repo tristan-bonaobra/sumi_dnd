@@ -61,7 +61,118 @@ COLUMN_HEADER_BUFFER_PCT = 0.5
 
 repo_dir = Path(__file__).resolve().parents[2]
 dm_dir = repo_dir / "dm"
-pdf_path = dm_dir / "class_knight.pdf"
+pdf_path = dm_dir / "class_warrior.pdf"
+
+#-------------------------------------------------------------------------------------------------+
+#   EXTRACTION MAIN
+#-------------------------------------------------------------------------------------------------+
+
+# I'm considering the smallest thing we can work with for each chunk of data that we want.
+
+# Maybe this function should be making use of split_text_by_nearest_marker.
+def extract_stats_from_text(text):
+    new_rpgclass = {
+        "def": "",
+        "main": [],
+        "sub": [],
+        "bonus_atts": []
+    }
+    new_rpgclass_name = None
+    step = 0 # 1:Init, 2:Main, 3:Sub, 4:Bonus
+    # We're forcing an order here because sometimes "Simplified" can mean either sub stats or bonus attributes.
+    for key, line in enumerate(text.split("\n")):
+        stripped_line = line.rstrip()
+        stat = stripped_line.upper()
+        extracting_main = confirm_any_marker_in_text(MARKERS_MAIN_STATS, line)
+        extracting_bonus_atts = confirm_any_marker_in_text(MARKERS_BONUS_ATTS, line)
+        extracting_sub = confirm_any_marker_in_text(MARKERS_SUB_STATS, line)
+        if extracting_main and (step == 0):
+            step = 1
+            continue # Skip the subheader
+        elif extracting_sub and (step == 1):
+            step = 2
+            continue
+        elif extracting_bonus_atts and (step == 2):
+            step = 3
+            continue
+        if step == 0:
+            if key == 0: new_rpgclass_name = stripped_line
+            else: new_rpgclass["def"] += line # From here on out assume rpgclass exists
+        elif step == 1: new_rpgclass["main"].append(stat)
+        elif step == 2: new_rpgclass["sub"].append(stat)
+        elif step == 3: new_rpgclass["bonus_atts"].append(line)
+    new_rpgclasses = {}
+    new_rpgclasses[new_rpgclass_name] = new_rpgclass
+    return new_rpgclasses
+
+def extract_passives_from_column_view(right_view):
+    right_text = custom_extract_text(right_view)
+    passive_names = extract_subheaders_from_view(right_view)
+    passive_defs = split_text_by_nearest_marker(right_text, passive_names)
+    new_passives = []
+    for key, passive_name in enumerate(passive_names):
+        new_passive = {
+            "name": passive_name,
+            "def": passive_defs[key]
+        }
+        new_passives.append(new_passive)
+    return new_passives
+
+def extract_abilities_from_column_view(left_view):
+    ability_names = extract_subheaders_from_view(left_view)
+    left_text = custom_extract_text(left_view)
+    ability_defs = split_text_by_nearest_marker(left_text, ability_names)
+    new_abilities = []
+    for key, ability_name in enumerate(ability_names):
+        ability_def = ability_defs[key]
+        cd, mp_cost = extract_cd_and_cost_from_ability_text(ability_def)
+        new_ability = {
+            "name": ability_name,
+            "def": ability_def,
+            "cd": cd,
+            "mp_cost": mp_cost
+        }
+        new_abilities.append(new_ability)
+    return new_abilities
+
+#-------------------------------------------------------------------------------------------------+
+#   EXTRACTION SUITE
+#-------------------------------------------------------------------------------------------------+
+
+def find_first_instance_of_word_in_page_words(keyword, page_words, case_sensitive=False):
+    for word in page_words:
+        text = word["text"]
+        if case_sensitive and (text == keyword):
+            return word
+        if (not case_sensitive) and (text.lower() == keyword.lower()):
+            return word
+
+def custom_extract_text(page): # Not to be confused with page.extract_text()
+    text = page.extract_text(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
+    return text
+
+def custom_extract_words(page): # Not to be confused with page.extract_words()
+    words = page.extract_words(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
+    return words
+
+def extract_cards_from_page(page):
+    images = page.images
+    cards = [image for image in images if confirm_image_is_card(image)]
+    return cards
+
+def extract_subheaders_from_view(view):
+    filtered_page = view.filter(filter_keep_subheaders)
+    text = custom_extract_text(filtered_page)
+    markers = text.split("\n")
+    return markers
+
+def extract_cd_and_cost_from_ability_text(text):
+    # Assume all abilities contain text in format: "CD: 1 ..." or "CD: 1 Cost: 1 MP ..."
+    cd_match = re.search(r"CD:\s*(\d+)", text)
+    cost_match = re.search(r"Cost:\s*(\d+)", text)
+    cd = int(cd_match.group(1)) if cd_match else None
+    cost = int(cost_match.group(1)) if cost_match else None
+    return cd, cost
 
 #-------------------------------------------------------------------------------------------------+
 #   META ANALYSIS
@@ -158,18 +269,6 @@ def confirm_char_matches_cmformat(char):
     return is_cmformat
 
 #-------------------------------------------------------------------------------------------------+
-#   PAGE SEARCH
-#-------------------------------------------------------------------------------------------------+
-
-def find_first_instance_of_word_in_page_words(keyword, page_words, case_sensitive=False):
-    for word in page_words:
-        text = word["text"]
-        if case_sensitive and (text == keyword):
-            return word
-        if (not case_sensitive) and (text.lower() == keyword.lower()):
-            return word
-
-#-------------------------------------------------------------------------------------------------+
 #   CROP TO VIEW
 #-------------------------------------------------------------------------------------------------+
 
@@ -240,95 +339,12 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
     return False
 
 #-------------------------------------------------------------------------------------------------+
-#   EXTRACTION SUITE
-#-------------------------------------------------------------------------------------------------+
-
-def custom_extract_text(page): # Not to be confused with page.extract_text()
-    text = page.extract_text(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
-    return text
-
-def custom_extract_words(page): # Not to be confused with page.extract_words()
-    words = page.extract_words(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
-    return words
-
-def extract_cards_from_page(page):
-    images = page.images
-    cards = [image for image in images if confirm_image_is_card(image)]
-    return cards
-
-def extract_subheaders_from_view(view):
-    filtered_page = view.filter(filter_keep_subheaders)
-    text = custom_extract_text(filtered_page)
-    markers = text.split("\n")
-    return markers
-
-def parse_ability_text(text):
-    # Assume all abilities have text in format: "CD: 1" or "CD: 1 Cost: 1 MP"
-    pattern = r"CD:\s*(\d+)(?:\s*Cost:\s*(\d+)\s*MP)?\s*\n(.*)"
-    match = re.search(pattern, text)
-    if match:
-        groups = [group for group in match.groups() if group is not None]
-        return groups
-    return []
-
-#-------------------------------------------------------------------------------------------------+
-#   EXTRACTION MAIN
-#-------------------------------------------------------------------------------------------------+
-
-def extract_stats_from_text(text):
-    new_rpgclass = {
-        "def": "",
-        "main": [],
-        "sub": [],
-        "bonus_atts": []
-    }
-    new_rpgclass_name = None
-    step = 0 # 1:Init, 2:Main, 3:Sub, 4:Bonus
-    # We're forcing an order here because sometimes "Simplified" can mean either sub stats or bonus attributes.
-    for key, line in enumerate(text.split("\n")):
-        stripped_line = line.rstrip()
-        stat = stripped_line.upper()
-        extracting_main = confirm_any_marker_in_text(MARKERS_MAIN_STATS, line)
-        extracting_bonus_atts = confirm_any_marker_in_text(MARKERS_BONUS_ATTS, line)
-        extracting_sub = confirm_any_marker_in_text(MARKERS_SUB_STATS, line)
-        if extracting_main and (step == 0):
-            step = 1
-            continue # Skip the subheader
-        elif extracting_sub and (step == 1):
-            step = 2
-            continue
-        elif extracting_bonus_atts and (step == 2):
-            step = 3
-            continue
-        if step == 0:
-            if key == 0: new_rpgclass_name = stripped_line
-            else: new_rpgclass["def"] += line # From here on out assume rpgclass exists
-        elif step == 1: new_rpgclass["main"].append(stat)
-        elif step == 2: new_rpgclass["sub"].append(stat)
-        elif step == 3: new_rpgclass["bonus_atts"].append(line)
-    new_rpgclasses = {}
-    new_rpgclasses[new_rpgclass_name] = new_rpgclass
-    return new_rpgclasses
-
-def extract_passives_from_column_view(right_view):
-    right_text = custom_extract_text(right_view)
-    passive_names = extract_subheaders_from_view(right_view)
-    passive_defs = split_text_by_nearest_marker(right_text, passive_names)
-    new_passives = []
-    for key, passive_name in enumerate(passive_names):
-        new_passive = {
-            "name": passive_name,
-            "def": passive_defs[key]
-        }
-        new_passives.append(new_passive)
-    return new_passives
-
-#-------------------------------------------------------------------------------------------------+
 #   ORCHESTRATION
 #-------------------------------------------------------------------------------------------------+
 
 with pdfplumber.open(pdf_path) as pdf:
     all_rpgclasses = defaultdict(dict)
+    all_abilities = []
     for page in pdf.pages:
         for card in extract_cards_from_page(page):
             current_view = crop_page_to_image(page, card)
@@ -341,10 +357,10 @@ with pdfplumber.open(pdf_path) as pdf:
                 new_rpgclasses = extract_stats_from_text(current_text)
             if is_skill_card:
                 left_column_view, right_column_view = crop_whole_page_to_ap_column_views_on_card(page, card)
-                new_passives = extract_passives_from_column_view(right_column_view)
-                new_passives_json_string = json.dumps(new_passives, indent=4)
-                new_passives_json_string = new_passives_json_string.replace("\\n", " ")
-                print(new_passives_json_string)
+                new_abilities = extract_abilities_from_column_view(left_column_view)
+                all_abilities.extend(new_abilities)
             for new_rpgclass_name, new_rpgclass in new_rpgclasses.items():
                 all_rpgclasses[new_rpgclass_name] |= new_rpgclass
-    print(json.dumps(all_rpgclasses, indent=4))
+    with open(r"C:\Users\tjames\Desktop\abilities.json", "w") as f:
+        json.dump(all_abilities, f, indent=4)
+    # print(json.dumps(all_rpgclasses, indent=4))
