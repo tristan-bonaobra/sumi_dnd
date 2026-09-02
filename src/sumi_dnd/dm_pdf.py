@@ -6,6 +6,7 @@
 # cmformat      comment format
 # ap            abilities and passives
 # def           definition
+# skill         ability or passive
 
 # NAMING CONVENTIONS
 # "Passives" and "abilities" are in plural when refering to their respective columns.
@@ -25,20 +26,30 @@ CARD_RATIO_BUFFER_PCT = 0.025
 CARD_VSPLIT_OFFSET = 5 # Split some distance to the right of where Passive starts
 
 # List all possible forms of the same functional marker
+# Old stuff might remove
 MARKERS_MAIN_STATS = ["Main"]
 MARKERS_SUB_STATS = ["Simplified", "Sub"]
 MARKERS_BONUS_ATTS = ["Simplified", "Bonus"]
+
+# Split the stat card by whatever comes first.
+SUBHEADERS_STAT_CARD = ["main", "main stat", "sub", "sub stat", "simplified", "bonus", "bonus attribute"]
+
+# This tells us we're looking at a skill card.
 MARKERS_SKILL_CARD = ["Class abilities"]
-MARKER_PASSIVE_COLUMN = "passive" # Search the card for this term.
+
+# We split the skill card where these words appears.
+MARKER_PASSIVE_COLUMN = "passive"
 MARKER_SUBCLASS_FOOTER = "subclass"
 SUBCLASS_FOOTER_BUFFER_PCT = 0.1
+
+# Note: Utilize these...
 MARKER_CD = "CD"
 MARKER_MP = "MP"
 
+# These tell us what font we're looking at.
+# Important for subheaders and comments.
 MARKERS_ITALICS = ["italic", "oblique"]
 MARKERS_BOLD = ["bold", "bd", "heavy", "thick", "blk", "black", "medi"]
-
-MARKERS_STAT_CARD = ["main stats", "simplified", "sub stats", "main", "sub"]
 
 # We assume that all comments are roughly this color and italic.
 CMFORMAT_NSC = (0.5725, 0.5725, 0.5725) # This assumes DeviceRGB.
@@ -61,7 +72,7 @@ COLUMN_HEADER_BUFFER_PCT = 0.5
 
 repo_dir = Path(__file__).resolve().parents[2]
 dm_dir = repo_dir / "dm"
-pdf_path = dm_dir / "class_warrior.pdf"
+pdf_path = dm_dir / "class_knight.pdf"
 
 #-------------------------------------------------------------------------------------------------+
 #   EXTRACTION MAIN
@@ -208,7 +219,7 @@ def split_text_by_nearest_marker(text, markers):
     nearest_marker_found = None
     nearest_marker_spot = None
     for this_marker in remaining_markers:
-        this_marker_spot = text.find(this_marker)
+        this_marker_spot = text.lower().find(this_marker.lower())
         no_marker_found = this_marker_spot == -1
         marker_found = not no_marker_found
         if marker_found:
