@@ -65,7 +65,7 @@ COLUMN_HEADER_BUFFER_PCT = 0.5
 
 repo_dir = Path(__file__).resolve().parents[2]
 dm_dir = repo_dir / "dm"
-pdf_path = dm_dir / "class_knight.pdf"
+pdf_path = dm_dir / "class_warrior.pdf"
 
 #-------------------------------------------------------------------------------------------------+
 #   STAT CARDS
@@ -315,22 +315,40 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
 #-------------------------------------------------------------------------------------------------+
 
 with pdfplumber.open(pdf_path) as pdf:
+    rpgclasses_by_name = {}
     for page in pdf.pages:
         for card in extract_cards_from_page(page):
-            current_view = crop_page_to_image(page, card)
-            current_view = current_view.filter(filter_remove_comments)
+            current_view = crop_page_to_image(page, card).filter(filter_remove_comments)
             current_text = custom_extract_text(current_view)
             is_skill_card = confirm_any_marker_in_text(MARKERS_SKILL_CARD, current_text)
-            is_stat_card = not is_skill_card
-            new_rpgclasses = {}
-            if is_stat_card:
-                asd = extract_data_from_stat_card_text(current_text)
             if is_skill_card:
-                left_column_view, right_column_view = crop_whole_page_to_skill_column_views_on_card(page, card)
-                new_abilities = extract_skills_from_column_view(left_column_view)
-                new_passives = extract_skills_from_column_view(right_column_view)
-                class_name = split_text_by_nearest_marker(current_text, MARKERS_SKILL_CARD)[0][:-1]
+                rpgclass_name = split_text_by_nearest_marker(current_text, MARKERS_SKILL_CARD)[0][:-1]
+                left_col, right_col = crop_whole_page_to_skill_column_views_on_card(page, card)
+                stat_card_data = None
+                new_abilities = extract_skills_from_column_view(left_col)
+                new_passives = extract_skills_from_column_view(right_col)
+            else:
+                stat_card_data = extract_data_from_stat_card_text(current_text)
+                rpgclass_name = stat_card_data["name"]
+                new_abilities = new_passives = None
 
-                print()
-                print(class_name)
-                print(json.dumps(new_abilities, indent=4))
+            rpgclass = rpgclasses_by_name.setdefault(
+                rpgclass_name.strip().lower(),
+                {
+                    "name": rpgclass_name,
+                    "main_stats": [],
+                    "sub_stats": [],
+                    "bonus_atts": [],
+                    "abilities": [],
+                    "passives": []
+                }
+            )
+            if stat_card_data:
+                rpgclass |= stat_card_data
+            if new_abilities:
+                rpgclass["abilities"].extend(new_abilities)
+            if new_passives:
+                rpgclass["passives"].extend(new_passives)
+
+    all_classes = list(rpgclasses_by_name.values())
+    print(json.dumps(all_classes, indent=4))
