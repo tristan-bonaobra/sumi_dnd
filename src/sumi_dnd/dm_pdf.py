@@ -12,9 +12,7 @@
 
 import pdfplumber
 import math
-import json
 import re
-from pathlib import Path
 from collections import defaultdict
 
 # Measurements based on Blade Dancer 22 Aug 2026
@@ -39,9 +37,8 @@ SUBCLASS_FOOTER_BUFFER_PCT = 0.1
 # This indent is expressed as a percentage of the width of the "Passive" subheader.
 PASSIVE_COLUMN_INDENT_PCT = 0.2
 
-# Note: Utilize these...
-MARKER_CD = "CD"
-MARKER_MP = "MP"
+MARKER_CD = "CD:"
+MARKER_MP = "Cost:"
 
 # These tell us what font we're looking at.
 # Important for subheaders and comments.
@@ -63,9 +60,63 @@ COLUMN_HEADER_BUFFER_PCT = 0.5
 # For the left card we'll go by markers in the text itself.
 # For the right card we'll assume only that subheaders are bold, and uniquely so.
 
-repo_dir = Path(__file__).resolve().parents[2]
-dm_dir = repo_dir / "dm"
-pdf_path = dm_dir / "class_warrior.pdf"
+#-------------------------------------------------------------------------------------------------+
+#   EXTRACT ALL
+#-------------------------------------------------------------------------------------------------+
+
+def extract_classes_from_pdf(pdf_path):
+    with pdfplumber.open(pdf_path) as pdf:
+        classes_by_name = {}
+        for page in pdf.pages:
+            for card in extract_cards_from_page(page):
+                data_from_card = extract_data_from_card_on_page(card, page)
+                class_name = data_from_card["name"]
+                search_key = class_name.strip().lower()
+                # We're actually using a key dict here but like, cleaner, I guess
+                # We didn't want key dicts because json standards but we deal with it like so
+                new_class = classes_by_name.setdefault(
+                    search_key,
+                    {"name": class_name, **make_class_template()}
+                ) 
+                for field in class_template_fields:
+                    if field in data_from_card:
+                        new_class[field].extend(data_from_card[field])
+        # Isolate just the keys in a list
+        all_classes = list(classes_by_name.values())
+        return all_classes
+
+def make_class_template():
+    return {
+        "main_stats": [],
+        "sub_stats": [],
+        "bonus_atts": [],
+        "abilities": [],
+        "passives": []
+    }
+
+class_template_fields = list(make_class_template())
+
+#-------------------------------------------------------------------------------------------------+
+#   ANY CARD
+#-------------------------------------------------------------------------------------------------+
+
+# Anything that involves cropping has to take both the card image and the whole page.
+def extract_data_from_card_on_page(card, page):
+    card_view = crop_page_to_image(page, card).filter(filter_remove_comments)
+    card_text = custom_extract_text(card_view)
+    is_skill_card = confirm_any_marker_in_text(MARKERS_SKILL_CARD, card_text)
+    if is_skill_card:
+        extracted_data = {
+            "name": split_text_by_nearest_marker(card_text, MARKERS_SKILL_CARD)[0][:-1],
+            "abilities": [],
+            "passives": []
+        }
+        new_abilities, new_passives = extract_skills_from_card_on_page(card, page)
+        extracted_data["abilities"].extend(new_abilities)
+        extracted_data["passives"].extend(new_passives)
+    else:
+        extracted_data = extract_data_from_stat_card_text(card_text)
+    return extracted_data
 
 #-------------------------------------------------------------------------------------------------+
 #   STAT CARDS
@@ -87,6 +138,12 @@ def extract_data_from_stat_card_text(text):
 #-------------------------------------------------------------------------------------------------+
 #   SKILL CARDS
 #-------------------------------------------------------------------------------------------------+
+
+def extract_skills_from_card_on_page(card, page):
+    left_col, right_col = crop_whole_page_to_skill_column_views_on_card(page, card)
+    new_abilities = extract_skills_from_column_view(left_col)
+    new_passives = extract_skills_from_column_view(right_col)
+    return new_abilities, new_passives
 
 def extract_skills_from_column_view(view):
     skill_names = extract_subheaders_from_view(view)
@@ -115,14 +172,22 @@ def extract_subheaders_from_view(view):
 
 def extract_cd_and_cost_from_skill_text(text):
     # Assume all abilities contain text in format: "CD: 1 ..." or "CD: 1 Cost: 1 MP ..."
-    cd_match = re.search(r"CD:\s*(\d+)", text)
-    cost_match = re.search(r"Cost:\s*(\d+)", text)
+    cd_match = re.search(rf"{MARKER_CD}\s*(\d+)", text)
+    cost_match = re.search(rf"{MARKER_MP}\s*(\d+)", text)
     cd = int(cd_match.group(1)) if cd_match else None
     cost = int(cost_match.group(1)) if cost_match else None
     return cd, cost
 
+def find_first_instance_of_word_in_page_words(keyword, page_words, case_sensitive=False):
+    for word in page_words:
+        text = word["text"]
+        if case_sensitive and (text == keyword):
+            return word
+        if (not case_sensitive) and (text.lower() == keyword.lower()):
+            return word
+
 #-------------------------------------------------------------------------------------------------+
-#   ALL CARDS
+#   TEXT ANALYSIS
 #-------------------------------------------------------------------------------------------------+
 
 def split_text_by_nearest_marker(text, markers):
@@ -165,25 +230,18 @@ def split_text_by_nearest_marker(text, markers):
     else:
         return message_from_future
 
-def find_first_instance_of_word_in_page_words(keyword, page_words, case_sensitive=False):
-    for word in page_words:
-        text = word["text"]
-        if case_sensitive and (text == keyword):
-            return word
-        if (not case_sensitive) and (text.lower() == keyword.lower()):
-            return word
+def confirm_any_marker_in_text(markers, text, case_sensitive=False):
+    for marker in markers:
+        if case_sensitive:
+            if marker in text:
+                return True
+        else:
+            if marker.lower() in text.lower():
+                return True
+    return False
 
 #-------------------------------------------------------------------------------------------------+
-#   EXTRACTION SUITE
-#-------------------------------------------------------------------------------------------------+
-
-def extract_cards_from_page(page):
-    images = page.images
-    cards = [image for image in images if confirm_image_is_card(image)]
-    return cards
-
-#-------------------------------------------------------------------------------------------------+
-#   META ANALYSIS STUFF
+#   PDFPLUMBER: OBJECT
 #-------------------------------------------------------------------------------------------------+
 
 def analyze_chars(page):
@@ -206,16 +264,6 @@ def analyze_chars(page):
         print(size, fontname, "is_italic:" + str(is_italic), nsc, joined_chars)
     return cformats
 
-def confirm_any_marker_in_text(markers, text, case_sensitive=False):
-    for marker in markers:
-        if case_sensitive:
-            if marker in text:
-                return True
-        else:
-            if marker.lower() in text.lower():
-                return True
-    return False
-
 def custom_extract_text(page): # Not to be confused with page.extract_text()
     text = page.extract_text(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
     return text
@@ -223,6 +271,11 @@ def custom_extract_text(page): # Not to be confused with page.extract_text()
 def custom_extract_words(page): # Not to be confused with page.extract_words()
     words = page.extract_words(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
     return words
+
+def extract_cards_from_page(page):
+    images = page.images
+    cards = [image for image in images if confirm_image_is_card(image)]
+    return cards
 
 def confirm_image_is_card(image):
     image_width = image["width"]
@@ -241,7 +294,7 @@ def confirm_char_matches_cmformat(char):
     return is_cmformat
 
 #-------------------------------------------------------------------------------------------------+
-#   CROPPING
+#   PDFPLUMBER: CROP
 #-------------------------------------------------------------------------------------------------+
 
 def crop_whole_page_to_skill_column_views_on_card(page, card):
@@ -311,44 +364,13 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
     return False
 
 #-------------------------------------------------------------------------------------------------+
-#   ORCHESTRATION
+#   TEST
 #-------------------------------------------------------------------------------------------------+
 
-with pdfplumber.open(pdf_path) as pdf:
-    rpgclasses_by_name = {}
-    for page in pdf.pages:
-        for card in extract_cards_from_page(page):
-            current_view = crop_page_to_image(page, card).filter(filter_remove_comments)
-            current_text = custom_extract_text(current_view)
-            is_skill_card = confirm_any_marker_in_text(MARKERS_SKILL_CARD, current_text)
-            if is_skill_card:
-                rpgclass_name = split_text_by_nearest_marker(current_text, MARKERS_SKILL_CARD)[0][:-1]
-                left_col, right_col = crop_whole_page_to_skill_column_views_on_card(page, card)
-                stat_card_data = None
-                new_abilities = extract_skills_from_column_view(left_col)
-                new_passives = extract_skills_from_column_view(right_col)
-            else:
-                stat_card_data = extract_data_from_stat_card_text(current_text)
-                rpgclass_name = stat_card_data["name"]
-                new_abilities = new_passives = None
+from pathlib import Path
+import json
 
-            rpgclass = rpgclasses_by_name.setdefault(
-                rpgclass_name.strip().lower(),
-                {
-                    "name": rpgclass_name,
-                    "main_stats": [],
-                    "sub_stats": [],
-                    "bonus_atts": [],
-                    "abilities": [],
-                    "passives": []
-                }
-            )
-            if stat_card_data:
-                rpgclass |= stat_card_data
-            if new_abilities:
-                rpgclass["abilities"].extend(new_abilities)
-            if new_passives:
-                rpgclass["passives"].extend(new_passives)
-
-    all_classes = list(rpgclasses_by_name.values())
-    print(json.dumps(all_classes, indent=4))
+repo_dir = Path(__file__).resolve().parents[2]
+dm_dir = repo_dir / "dm"
+pdf_path = dm_dir / "class_knight.pdf"
+print(json.dumps(extract_classes_from_pdf(pdf_path), indent=4))
