@@ -154,9 +154,9 @@ def extract_skills_from_column_view(view):
         skill_def = skill_defs[key]
         new_skill = {
             "name": skill_name,
-            "def": skill_def,
+            "def": remove_cost_line_from_text(skill_def),
         }
-        cd, mp_cost = extract_cd_and_cost_from_skill_text(skill_def)
+        cd, mp_cost = extract_cd_and_cost_from_text(skill_def)
         if cd is not None:
             new_skill["cd"] = cd
         if mp_cost is not None:
@@ -170,21 +170,35 @@ def extract_subheaders_from_view(view):
     markers = text.split("\n")
     return markers
 
-def extract_cd_and_cost_from_skill_text(text):
-    # Assume all abilities contain text in format: "CD: 1 ..." or "CD: 1 Cost: 1 MP ..."
-    cd_match = re.search(rf"{MARKER_CD}\s*(\d+)", text)
-    cost_match = re.search(rf"{MARKER_MP}\s*(\d+)", text)
+# Assume all abilities contain text in format: "CD: 1 ..." or "CD: 1 Cost: 1 MP ..."
+
+def extract_cd_and_cost_from_text(text):
+    followed_by_any_spaces = r"\s*"
+    then_select_just_the_numbers = r"(\d+)"
+    cd_match = re.search(rf"{MARKER_CD}{followed_by_any_spaces}{then_select_just_the_numbers}", text)
+    cost_match = re.search(rf"{MARKER_MP}{followed_by_any_spaces}{then_select_just_the_numbers}", text)
     cd = int(cd_match.group(1)) if cd_match else None
     cost = int(cost_match.group(1)) if cost_match else None
     return cd, cost
 
-def find_first_instance_of_word_in_page_words(keyword, page_words, case_sensitive=False):
-    for word in page_words:
-        text = word["text"]
-        if case_sensitive and (text == keyword):
-            return word
-        if (not case_sensitive) and (text.lower() == keyword.lower()):
-            return word
+def remove_cost_line_from_text(text, MARKER_CD="CD:", MARKER_MP="Cost:"):
+    inline_spaces = rf"[ \t]*"
+    digits = rf"\d+"
+    letters = rf"\w+"
+    ending_linespace = rf"\n?"
+
+    cost_value = rf"{digits}{inline_spaces}{letters}"
+    trailing_whitespace = rf"{inline_spaces}{ending_linespace}"
+
+    cd_pattern = rf"{MARKER_CD}{inline_spaces}{digits}{inline_spaces}"
+    cost_pattern = rf"{MARKER_MP}{inline_spaces}{cost_value}"
+
+    pattern = re.compile(rf"^{cd_pattern}{regex_make_optional(cost_pattern)}{trailing_whitespace}")
+    result = pattern.sub("", text)
+    return result
+
+def regex_make_optional(pattern):
+    return f"(?:{pattern})?"
 
 #-------------------------------------------------------------------------------------------------+
 #   TEXT ANALYSIS
@@ -293,6 +307,14 @@ def confirm_char_matches_cmformat(char):
     is_cmformat = is_color_cmformat and is_italic
     return is_cmformat
 
+def find_first_instance_of_word_in_page_words(keyword, page_words, case_sensitive=False):
+    for word in page_words:
+        text = word["text"]
+        if case_sensitive and (text == keyword):
+            return word
+        if (not case_sensitive) and (text.lower() == keyword.lower()):
+            return word
+
 #-------------------------------------------------------------------------------------------------+
 #   PDFPLUMBER: CROP
 #-------------------------------------------------------------------------------------------------+
@@ -367,10 +389,11 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
 #   TEST
 #-------------------------------------------------------------------------------------------------+
 
-from pathlib import Path
-import json
+def dm_df_test():
+    from pathlib import Path
+    import json
 
-repo_dir = Path(__file__).resolve().parents[2]
-dm_dir = repo_dir / "dm"
-pdf_path = dm_dir / "class_knight.pdf"
-print(json.dumps(extract_classes_from_pdf(pdf_path), indent=4))
+    repo_dir = Path(__file__).resolve().parents[2]
+    dm_dir = repo_dir / "dm"
+    pdf_path = dm_dir / "class_knight.pdf"
+    print(json.dumps(extract_classes_from_pdf(pdf_path), indent=4))
