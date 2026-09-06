@@ -1,10 +1,10 @@
-from sumi_dnd import database
-from sumi_dnd import pdf_extract
+from sumi_dnd import db_engine
 from sqlalchemy import text
 
-engine = database.get_engine()
+engine = db_engine.get_engine()
 
-def update_database():
+# Pressing the big red button
+def reinitialize_database():
     print("Pushing the big red button")
     nuke_schema()
     create_readonly_role()
@@ -26,4 +26,4 @@ def create_readonly_role():
         conn.execute(text("GRANT pg_read_all_data TO readonly;"))
         conn.commit()
 
-update_database()
+reinitialize_database()
