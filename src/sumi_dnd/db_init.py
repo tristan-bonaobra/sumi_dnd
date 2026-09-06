@@ -3,7 +3,6 @@ from sqlalchemy import text
 
 engine = db_engine.get_engine()
 
-# Pressing the big red button
 def reinitialize_database():
     print("Pushing the big red button")
     nuke_schema()
