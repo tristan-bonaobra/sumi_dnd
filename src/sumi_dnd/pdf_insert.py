@@ -6,16 +6,24 @@ engine = database.get_engine()
 
 def update_database():
     print("Pushing the big red button")
+    nuke_schema()
+    create_readonly_role()
+
+def nuke_schema():
     with engine.begin() as conn:
-        init_sql_list = [
-            "DROP SCHEMA IF EXISTS public CASCADE;",
-            "CREATE SCHEMA public;",
-            "DROP ROLE IF EXISTS readonly;"
-            "CREATE ROLE readonly;",
-            "GRANT pg_read_all_data TO readonly;"
-        ]
-        for init_sql in init_sql_list:
-            print(init_sql)
-            conn.execute(text(init_sql))
+        conn.execute(text("""
+            DROP SCHEMA IF EXISTS public CASCADE;
+            CREATE SCHEMA public;
+        """))
+
+def create_readonly_role():
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("CREATE ROLE readonly;"))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        conn.execute(text("GRANT pg_read_all_data TO readonly;"))
+        conn.commit()
 
 update_database()
