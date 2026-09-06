@@ -389,11 +389,10 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
 #   TEST
 #-------------------------------------------------------------------------------------------------+
 
-def dm_df_test():
-    from pathlib import Path
-    import json
+# from pathlib import Path
+# import json
 
-    repo_dir = Path(__file__).resolve().parents[2]
-    dm_dir = repo_dir / "dm"
-    pdf_path = dm_dir / "class_knight.pdf"
-    print(json.dumps(extract_classes_from_pdf(pdf_path), indent=4))
+# repo_dir = Path(__file__).resolve().parents[2]
+# dm_dir = repo_dir / "dm"
+# pdf_path = dm_dir / "class_knight.pdf"
+# print(json.dumps(extract_classes_from_pdf(pdf_path), indent=4))
