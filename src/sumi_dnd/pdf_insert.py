@@ -1,10 +1,21 @@
 from sumi_dnd import database
+from sumi_dnd import pdf_extract
 from sqlalchemy import text
-import pandas as pd
 
 engine = database.get_engine()
 
-with engine.connect() as conn:
-    query = "SELECT * FROM skill_search LIMIT 1;"
-    df = pd.read_sql(query, conn)
-    print(df.to_markdown(index=False))
+def update_database():
+    print("Pushing the big red button")
+    with engine.begin() as conn:
+        init_sql_list = [
+            "DROP SCHEMA IF EXISTS public CASCADE;",
+            "CREATE SCHEMA public;",
+            "DROP ROLE IF EXISTS readonly;"
+            "CREATE ROLE readonly;",
+            "GRANT pg_read_all_data TO readonly;"
+        ]
+        for init_sql in init_sql_list:
+            print(init_sql)
+            conn.execute(text(init_sql))
+
+update_database()
