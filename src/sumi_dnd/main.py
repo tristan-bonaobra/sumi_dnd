@@ -1,4 +1,4 @@
-from sumi_dnd import db_connect
+from sumi_dnd import db_engine
 import pandas as pd
 from sqlalchemy import text
 import tabulate
@@ -25,7 +25,7 @@ TABLE_COLUMNS = {
     "skill_search": {"Effects", "Skill", "Target Type", "Skill Type", "Class"}
 }
 
-engine = db_connect.get_engine()
+engine = db_engine.get_engine()
 
 def parse_cmd(cmd: str) -> dict:
     cmd_dict = {}
