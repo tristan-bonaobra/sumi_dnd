@@ -1,24 +1,26 @@
 import os
 import sys
 from pathlib import Path
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from sqlalchemy import create_engine
-
-script_dir = Path(__file__).parent
+from sqlalchemy.engine import URL
 
 if getattr(sys, 'frozen', False):
     env_path = Path(sys.executable).parent / ".env"
+    load_dotenv(dotenv_path=env_path)
 else:
-    env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+    load_dotenv(find_dotenv())
+
+db_url = URL.create(
+    drivername="postgresql+psycopg2",
+    username=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    host=os.getenv("DB_HOST"),
+    port=int(os.getenv("DB_PORT", 5432)),
+    database=os.getenv("DB_NAME"),
+)
+
+engine = create_engine(db_url)
 
 def get_engine():
-    
-    load_dotenv(dotenv_path=env_path)
-
-    db_host = os.getenv("DB_HOST")
-    db_port = os.getenv("DB_PORT")
-    db_name = os.getenv("DB_NAME")
-    db_user = os.getenv("DB_USER")
-    db_password = os.getenv("DB_PASSWORD")
-
-    return create_engine(f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}")
+    return engine

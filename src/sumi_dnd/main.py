@@ -55,10 +55,10 @@ def get_query_for_table(table_name: str, cmd_dict: dict):
 
 def main():
     print(f"Welcome to sumi_dnd!\nExample cmd: 'effect:buff target:multi'")
-    while True:
-        cmd = input("> ")
-        cmd_dict = parse_cmd(cmd)
-        with engine.connect() as conn:
+    with engine.connect() as conn:
+        while True:
+            cmd = input("> ")
+            cmd_dict = parse_cmd(cmd)
             for table_name in TABLE_COLUMNS:
                 read_params = get_read_params_for_table(table_name, cmd_dict)
                 query = get_query_for_table(table_name, cmd_dict)

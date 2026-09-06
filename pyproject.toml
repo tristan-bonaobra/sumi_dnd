@@ -28,4 +28,4 @@ dev = [
 ]
 
 [tool.deptry]
-known_first_party = ["database"]
+known_first_party = ["database", "sumi_dnd"]
