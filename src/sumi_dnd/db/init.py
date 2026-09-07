@@ -1,10 +1,10 @@
-from sumi_dnd import db_engine
+from sumi_dnd.db import get_engine
 from sqlalchemy import text
 from pathlib import Path
 
-engine = db_engine.get_engine()
-script_dir = Path(__file__).parent
-schema_source_path = script_dir / "schema.sql"
+engine = get_engine()
+sumi_dnd_dir = Path(__file__).resolve().parents[1]
+schema_source_path = sumi_dnd_dir / "sql" / "schema.sql"
 
 def reinitialize_database():
     print("Pushing the big red button")

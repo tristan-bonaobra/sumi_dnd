@@ -1,8 +1,8 @@
-from sumi_dnd import db_init
-from sumi_dnd import pdf_insert
+from sumi_dnd.db import reinitialize_database
+from sumi_dnd.pdf import insert_pdf
 
 INSERT_FILES = ["class_knight.pdf", "class_warrior.pdf"]
 
-db_init.reinitialize_database()
+reinitialize_database()
 for file_name in INSERT_FILES:
-    pdf_insert.insert_pdf(file_name)
+    insert_pdf(file_name)
