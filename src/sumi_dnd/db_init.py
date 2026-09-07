@@ -33,5 +33,3 @@ def init_schema():
     with engine.begin() as conn:
         with open(schema_source_path, "r", encoding="utf-8") as file:
             conn.execute(text(file.read()))
-
-reinitialize_database()
