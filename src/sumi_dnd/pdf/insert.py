@@ -31,8 +31,8 @@ def insert_pdf(file_name):
                         RETURNING id;
                     """),
                     {
-                        "name": new_passive["name"],
-                        "def": new_passive["def"]
+                        "name": new_passive.get("name"),
+                        "def": new_passive.get("def")
                     }
                 ).scalar()
                 conn.execute(
@@ -40,5 +40,29 @@ def insert_pdf(file_name):
                     {
                         "class_id": returned_class_id,
                         "passive_id": returned_passive_id
+                    }
+                )
+
+            # Add abilities
+            for new_ability in new_class["abilities"]:
+                returned_ability_id = conn.execute(
+                    text("""
+                        INSERT INTO ability(name, def, cd, mp_cost) VALUES (:name, :def, :cd, :mp_cost)
+                        ON CONFLICT (name) DO UPDATE
+                            SET name = EXCLUDED.name
+                        RETURNING id;
+                    """),
+                    {
+                        "name": new_ability.get("name"),
+                        "def": new_ability.get("def"),
+                        "cd": new_ability.get("cd"),
+                        "mp_cost": new_ability.get("mp_cost")
+                    }
+                ).scalar()
+                conn.execute(
+                    text("INSERT INTO class_ability(class_id, ability_id) VALUES (:class_id, :ability_id);"),
+                    {
+                        "class_id": returned_class_id,
+                        "ability_id": returned_ability_id
                     }
                 )
