@@ -13,8 +13,32 @@ def insert_pdf(file_name):
         print(f"Importing {file_name}")
         import_path = dm_dir / file_name
         extracted_classes = extract_classes_from_pdf(import_path)
-        for current_class in extracted_classes:
-            conn.execute(
-                text("INSERT INTO class(name) VALUES(:class_name)"),
-                {"class_name": current_class["name"]}
-            )
+        
+        for new_class in extracted_classes:
+            # Add class name
+            returned_class_id = conn.execute(
+                text("INSERT INTO class(name) VALUES(:name) RETURNING id;"),
+                {"name": new_class["name"]}
+            ).scalar()
+            
+            # Add passives
+            for new_passive in new_class["passives"]:
+                returned_passive_id = conn.execute(
+                    text("""
+                        INSERT INTO passive(name, def) VALUES (:name, :def)
+                        ON CONFLICT (name) DO UPDATE
+                            SET name = EXCLUDED.name
+                        RETURNING id;
+                    """),
+                    {
+                        "name": new_passive["name"],
+                        "def": new_passive["def"]
+                    }
+                ).scalar()
+                conn.execute(
+                    text("INSERT INTO class_passive(class_id, passive_id) VALUES (:class_id, :passive_id);"),
+                    {
+                        "class_id": returned_class_id,
+                        "passive_id": returned_passive_id
+                    }
+                )
