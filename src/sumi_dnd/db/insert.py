@@ -4,9 +4,13 @@ from pathlib import Path
 from sqlalchemy import text
 
 engine = get_engine()
+
 current_file = Path(__file__).resolve()
 project_root = next(p for p in current_file.parents if (p / "pyproject.toml").exists()) # Bold assumption
+
 dm_dir = project_root / "dm"
+sql_dir = project_root / "src" / "sumi_dnd" / "sql"
+seed_source_path = sql_dir / "seed.sql"
 
 def insert_pdf(file_name):
     with engine.begin() as conn:
@@ -66,3 +70,8 @@ def insert_pdf(file_name):
                         "ability_id": returned_ability_id
                     }
                 )
+
+def insert_seed():
+    with engine.begin() as conn:
+        with open(seed_source_path, "r", encoding="utf-8") as file:
+            conn.execute(text(file.read()))
