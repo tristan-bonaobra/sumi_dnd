@@ -154,7 +154,7 @@ def extract_skills_from_column_view(view):
         skill_def = skill_defs[key]
         new_skill = {
             "name": skill_name,
-            "def": remove_cost_line_from_text(skill_def),
+            "def": remove_cost_line_from_text(skill_def).replace("\n", " "),
         }
         cd, mp_cost = extract_cd_and_cost_from_text(skill_def)
         if cd is not None:
