@@ -7,12 +7,13 @@ sumi_dnd_dir = Path(__file__).resolve().parents[1]
 schema_source_path = sumi_dnd_dir / "sql" / "schema.sql"
 
 def reinitialize_database():
+    print("Nuking database")
     nuke_schema()
+    print("Rebuilding database")
     create_readonly_role()
     init_schema()
 
 def nuke_schema():
-    print("Pushing the big red button")
     with engine.begin() as conn:
         conn.execute(text("""
             DROP SCHEMA IF EXISTS public CASCADE;
