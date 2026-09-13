@@ -1,0 +1,181 @@
+Choose one appropriate target type and at least one effect. Below are examples.
+
+Prompt: [Stun] a single enemy and another random enemy,.
+Target type: Multi
+Effects: CC
+
+Prompt: [Stun] all enemies and deal half [WIS base] dark damage.
+Target type: Multi
+Effects: CC
+
+Prompt: [Stun] a single enemy for 1 round.
+Target type: Single
+Effects: CC
+
+Prompt: [Stun] a single enemy.
+Target type: Single
+Effects: CC
+
+Prompt: Apply [Dark Plague] on a single target for 3 rounds.
+Target type: Single
+Effects: Damage
+
+Prompt: Deal [CHA base] holy damage to a single enemy.
+Target type: Single
+Effects: Damage
+
+Prompt: Apply [Hex] on a single enemy.
+Target type: Single
+Effects: Debuff
+
+Prompt: Apply [Hunter Mark] on a single target for 3 rounds.
+Target type: Single
+Effects: Debuff
+
+Prompt: Apply [Slow] on all enemies for 1 round.
+Target type: Multi
+Effects: Debuff
+
+Prompt: Inflict a random Debuff/Infliction to all enemies.
+Target type: Multi
+Effects: Debuff
+
+Prompt: Apply a chosen infliction on the next Arrow Shot.
+Target type: Self
+Effects: Buff
+
+Prompt: Consume all MP, granting INT for each MP consumed for 2 rounds.
+Target type: Self
+Effects: Buff
+
+Prompt: Become invisible for 1 round.
+Target type: Self
+Effects: Stealth
+
+Prompt: Channel a blood field that will deal [CHA base] Magic damage to all enemies. MP per second.
+Target type: Multi
+Effects: DoT
+
+Prompt: Channel a hex field, enemies casting abilities will be inflected by [Hex]. MP per second.
+Target type: Field
+Effects: Debuff
+
+Prompt: Convert [Ki] to [Regeneration].
+Target type: Self
+Effects: Sustain
+
+Prompt: Gain [Defense] for 2 rounds.
+Target type: Self
+Effects: Sustain
+
+Prompt: Deal [CHA base] holy damage to all enemies.
+Target type: Multi
+Effects: Damage
+
+Prompt: Deal [INT base] physical damage to all enemies.
+Target type: Multi
+Effects: Damage
+
+Prompt: Deal [STR base] physical damage, applying [Imbalance] for 1 round.
+Target type: Single
+Effects: CC, Damage
+
+Prompt: Deal [STR base] physical damage, applying [Stun] for 1 round.
+Target type: Single
+Effects: CC, Damage
+
+Prompt: Disable target [Doorway].
+Target type: Single
+Effects: <null>
+
+Prompt: Enable target [Doorway].
+Target type: Single
+Effects: Sustain
+
+Prompt: Grant [Magic Shield] for you or an ally for 2 rounds.
+Target type: Single
+Effects: Sustain
+
+Prompt: Gain [Obedience].
+Target type: Multi
+Effects: Any
+
+Prompt: Gain [Serenity].
+Target type: Multi
+Effects: Sustain
+
+Prompt: Party gains [Defense] for 2 rounds.
+Target type: Multi
+Effects: Sustain
+
+Prompt: Grant [Parry].
+Target type: Revenge
+Effects: Damage
+
+Prompt: Grant a single ally [Double Cast].
+Target type: Single
+Effects: Buff
+
+Prompt: Grant a single ally +1 [STR] and +1 [INT].
+Target type: Single
+Effects: Buff
+
+Prompt: Grant all allies [Inspire] and enemies [Discourage].
+Target type: Multi
+Effects: Buff
+
+Prompt: Grant the party [Legato] for 3 rounds.
+Target type: Multi
+Effects: Buff
+
+Prompt: Inflict [Complete Submission] on a single target.
+Target type: Single
+Effects: Summon
+
+Prompt: On a single enemy convert [Hel seal] to [Burn] for 3 rounds.
+Target type: Single
+Effects: DoT
+
+Prompt: Target gains [Poison] for 2 rounds.
+Target type: Single
+Effects: DoT
+
+Prompt: Remove [Invisibility] for enemies, and cleanses [Blindness] for allies.
+Target type: Multi
+Effects: Perception
+
+Prompt: Remove all debuffs and inflictions from target ally.
+Target type: Single
+Effects: Cleanse
+
+Prompt: Target ally gains [Immunity] for 2 rounds.
+Target type: Single
+Effects: Cleanse
+
+Prompt: Remove all inflictions and debuffs on the caster.
+Target type: Self
+Effects: Cleanse
+
+Prompt: Rewind a single target to the previous round health value.
+Target type: Single
+Effects: Any
+
+Prompt: Target gains [Fortune].
+Target type: Single
+Effects: Any
+
+Prompt: Summon [Bird Familiar].
+Target type: Field
+Effects: Summon
+
+Prompt: Summon [Storm Totem] for 5 rounds.
+Target type: Field
+Effects: Summon
+
+Prompt: Target ally gains [Warp].
+Target type: Single
+Effects: Stealth
+
+Notes:
+- Damage targets health. Debuffs are non-damaging effects that apply harmful status and multipliers.
+- DoT stands for damage over turns.

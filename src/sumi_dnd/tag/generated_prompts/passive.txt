@@ -1,0 +1,145 @@
+Choose one appropriate target type and at least one effect. Below are examples.
+
+Prompt: [Fear], [Stun], and [Slow] triggers Dread on the target.
+Target type: Auto
+Effects: Damage
+
+Prompt: [Stun] enemies automatically casts Open Fire on them at no cost.
+Target type: Auto
+Effects: Damage
+
+Prompt: Abilities grant [Bladedancer Form] until attacked.
+Target type: Self
+Effects: Buff
+
+Prompt: Gain [Level] STR.
+Target type: Self
+Effects: Buff
+
+Prompt: Ability to speak to animals.
+Target type: Self
+Effects: Perception
+
+Prompt: Gain 1+ warding efficiency.
+Target type: Self
+Effects: Perception
+
+Prompt: All enemies gain [Slippery].
+Target type: Multi
+Effects: Debuff
+
+Prompt: Allies gain +1 Spell Level.
+Target type: Multi
+Effects: Buff
+
+Prompt: Grant +1 Level for familiars.
+Target type: Multi
+Effects: Buff
+
+Prompt: Casting spells applies [Regeneration] to a random ally.
+Target type: Random
+Effects: Sustain
+
+Prompt: Casting spells inflict [Poison] on a random enemy for 2 rounds.
+Target type: Random
+Effects: Antiheal, DoT
+
+Prompt: Critical hits on enemies will apply [Mirror] for 1 round.
+Target type: Multi
+Effects: Damage
+
+Prompt: Dealing damage will heal you.
+Target type: Self
+Effects: Sustain
+
+Prompt: Dealing magic damage will heal you for half the amount.
+Target type: Self
+Effects: Sustain
+
+Prompt: Evert third ability used, enter [Stage Mode] for 3 rounds.
+Target type: Auto
+Effects: Cleanse
+
+Prompt: Every 3 rounds, flip a coin to receive bonuses.
+Target type: Self
+Effects: Resources
+
+Prompt: Gain advantage and proficiency in spellcrafting and witch arts.
+Target type: Self
+Effects: Resources
+
+Prompt: Every round, cleanse a random ally of one debuff, infliction, or crowd control.
+Target type: Random
+Effects: Cleanse
+
+Prompt: Gain -3 CON. On death, ressurect with 50% max health. Refreshes every battle.
+Target type: Sacrifice
+Effects: Sustain
+
+Prompt: If you cant spend mana to cast a spell, consume your health instead for twice the cost.
+Target type: Sacrifice
+Effects: Sustain
+
+Prompt: Gain [Doorway].
+Target type: Multi
+Effects: Sustain
+
+Prompt: On turn skip, all party members gain [Defense] for 1 round.
+Target type: Multi
+Effects: Sustain
+
+Prompt: Gain +1 STR and +1 CON when weapon slot is empty.
+Target type: Sacrifice
+Effects: Buff
+
+Prompt: Gain advantage on dodge rolls.
+Target type: Self
+Effects: Stealth
+
+Prompt: Gain advantage on lock picking.
+Target type: Self
+Effects: Any
+
+Prompt: Gain immunity to inflictions and debuffs.
+Target type: Self
+Effects: Cleanse
+
+Prompt: Party gains +1 on rolls.
+Target type: Multi
+Effects: Any
+
+Prompt: Party gains dodge advantage.
+Target type: Multi
+Effects: Stealth
+
+Prompt: Party gains immunity to fire damage.
+Target type: Multi
+Effects: Cleanse
+
+Prompt: Taking damage from enemies with [Passage] causes them to receive the same amount of damage.
+Target type: Revenge
+Effects: Damage
+
+Prompt: Upon dying, deal x2 [INT base] light damage on all enemies.
+Target type: Revenge
+Effects: Damage
+
+Prompt: Taking damage grants [Defense] for 1 round.
+Target type: Revenge
+Effects: Sustain
+
+Prompt: Taking damage while having [Rage] grants a stack of [Mediate].
+Target type: Revenge
+Effects: Buff
+
+Prompt: While below 50% HP, gain [Level] STR.
+Target type: Revenge
+Effects: Buff
+
+Prompt: The next ally that dies will be resurrected. Occurs once per battle.
+Target type: Single
+Effects: Sustain
+
+Notes:
+- Damage targets health. Debuffs are non-damaging effects that apply harmful status and multipliers.
+- DoT stands for damage over turns.
