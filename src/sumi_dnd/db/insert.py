@@ -14,14 +14,19 @@ seed_source_path = sql_dir / "seed.sql"
 
 def insert_pdf(file_name):
     with engine.begin() as conn:
-        print(f"Importing {file_name}")
+        print(f"Inserting {file_name}")
         import_path = dm_dir / file_name
         extracted_classes = extract_classes_from_pdf(import_path)
         
         for new_class in extracted_classes:
             # Add class name
             returned_class_id = conn.execute(
-                text("INSERT INTO class(name) VALUES(:name) RETURNING id;"),
+                text("""
+                    INSERT INTO class(name) VALUES(:name)
+                    ON CONFLICT (name) DO UPDATE
+                        SET name = EXCLUDED.name
+                    RETURNING id;
+                """),
                 {"name": new_class["name"]}
             ).scalar()
             
@@ -40,7 +45,11 @@ def insert_pdf(file_name):
                     }
                 ).scalar()
                 conn.execute(
-                    text("INSERT INTO class_passive(class_id, passive_id) VALUES (:class_id, :passive_id);"),
+                    text("""
+                        INSERT INTO class_passive(class_id, passive_id)
+                        VALUES (:class_id, :passive_id)
+                        ON CONFLICT DO NOTHING;
+                    """),
                     {
                         "class_id": returned_class_id,
                         "passive_id": returned_passive_id
@@ -64,13 +73,18 @@ def insert_pdf(file_name):
                     }
                 ).scalar()
                 conn.execute(
-                    text("INSERT INTO class_ability(class_id, ability_id) VALUES (:class_id, :ability_id);"),
+                    text("""
+                        INSERT INTO class_ability(class_id, ability_id)
+                        VALUES (:class_id, :ability_id)
+                        ON CONFLICT DO NOTHING;
+                    """),
                     {
                         "class_id": returned_class_id,
                         "ability_id": returned_ability_id
                     }
                 )
 
+# For testing
 def insert_seed():
     with engine.begin() as conn:
         with open(seed_source_path, "r", encoding="utf-8") as file:
