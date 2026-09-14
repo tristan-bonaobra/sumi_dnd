@@ -143,3 +143,4 @@ Effects: Sustain
 Notes:
 - Damage targets health. Debuffs are non-damaging effects that apply harmful status and multipliers.
 - DoT stands for damage over turns.
+- CC stands for crowd control such as stuns and slows.

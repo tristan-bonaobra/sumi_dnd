@@ -4,7 +4,8 @@ from pathlib import Path
 
 engine = get_engine()
 sumi_dnd_dir = Path(__file__).resolve().parents[1]
-schema_source_path = sumi_dnd_dir / "sql" / "schema.sql"
+script_dir = Path(__file__).parent
+schema_source_path = script_dir / "sql" / "schema.sql"
 
 def reinitialize_database():
     print("Nuking database")

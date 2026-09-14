@@ -1,14 +1,16 @@
-from sumi_dnd.db import get_engine, reinitialize_database, insert_seed
+from sumi_dnd.db import get_engine, reinitialize_database
 from sqlalchemy import text
 from pathlib import Path
 from collections import defaultdict
 
 script_dir = Path(__file__).parent
-select_abilities_source_path = script_dir / "select_abilities.sql"
+select_abilities_source_path = script_dir / "sql" / "select_abilities.sql"
 
 engine = get_engine()
 
 def get_system_prompt_for_tags(for_passives=False) -> str:
+    print(f"Generating system prompt for {"passives" if for_passives else "abilities"}")
+
     with engine.begin() as conn:
         with open(select_abilities_source_path, "r") as file:
             select_sql = file.read()
@@ -39,7 +41,8 @@ def get_system_prompt_for_tags(for_passives=False) -> str:
         f"\n\n".join(examples),
         f"\nNotes:",
         "- Damage targets health. Debuffs are non-damaging effects that apply harmful status and multipliers.",
-        "- DoT stands for damage over turns."
+        "- DoT stands for damage over turns.",
+        "- CC stands for crowd control such as stuns and slows."
     ]
     system_prompt = "\n".join(system_prompt_lines)
 
@@ -49,7 +52,15 @@ def get_system_prompt_for_tags(for_passives=False) -> str:
 
     return system_prompt
 
-reinitialize_database()
-insert_seed()
-get_system_prompt_for_tags(for_passives=True)
-get_system_prompt_for_tags(for_passives=False)
+def insert_seed():
+    with engine.begin() as conn:
+        with open(script_dir / "sql" / "seed.sql", "r", encoding="utf-8") as file:
+            conn.execute(text(file.read()))
+
+def nuke_database_and_generate_prompts():
+    reinitialize_database()
+    insert_seed()
+    get_system_prompt_for_tags(for_passives=True)
+    get_system_prompt_for_tags(for_passives=False)
+
+nuke_database_and_generate_prompts()

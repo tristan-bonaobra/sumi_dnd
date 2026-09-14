@@ -1,7 +1,6 @@
-from sumi_dnd import db_engine
-import pandas as pd
+from sumi_dnd.db import db_engine
 from sqlalchemy import text
-import tabulate
+import pandas as pd
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)

@@ -83,9 +83,3 @@ def insert_pdf(file_name):
                         "ability_id": returned_ability_id
                     }
                 )
-
-# For testing
-def insert_seed():
-    with engine.begin() as conn:
-        with open(seed_source_path, "r", encoding="utf-8") as file:
-            conn.execute(text(file.read()))
