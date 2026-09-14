@@ -32,10 +32,7 @@ def insert_tags_for_skills(skill_type: SkillType):
                 options={
                     "temperature": 0,
                     "seed": 0,
-                    "num_gpu": 99,
-                    "num_ctx": 4096
                 },
-                keep_alive=-1
             )
             bot_response = json.loads(bot_response.message.content)
 
