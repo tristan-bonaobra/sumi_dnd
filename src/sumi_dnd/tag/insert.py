@@ -28,7 +28,7 @@ def insert_tags_for_skills(skill_type: SkillType):
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": getattr(row, "def")}
                 ],
-                format=RESPONSE_FORMAT,
+                format=get_response_format(),
                 options={
                     "temperature": 0,
                     "seed": 0,
@@ -67,20 +67,21 @@ def insert_tags_for_skills(skill_type: SkillType):
                 )
     print()
 
-RESPONSE_FORMAT = {
-    "type": "object",
-    "properties": {
-        "target_type": {
-            "type": "string",
-            "enum": [e.value for e in TargetType]
-        },
-        "effects": {
-            "type": "array",
-            "items": {
+def get_response_format():
+    return {
+        "type": "object",
+        "properties": {
+            "target_type": {
                 "type": "string",
-                "enum": [e.value for e in Effect]
+                "enum": [e.value for e in TargetType]
+            },
+            "effects": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "enum": [e.value for e in Effect]
+                }
             }
-        }
-    },
-    "required": ["target_type", "effects"]
-}
+        },
+        "required": ["target_type", "effects"]
+    }
