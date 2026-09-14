@@ -1,7 +1,11 @@
-from sumi_dnd.db import get_engine
 from sumi_dnd.pdf import extract_classes_from_pdf
-from pathlib import Path
+from sumi_dnd.db import get_engine
 from sqlalchemy import text
+from typing import Literal
+from pathlib import Path
+import re
+
+SkillType = Literal["ability", "passive"]
 
 engine = get_engine()
 
@@ -83,3 +87,37 @@ def insert_pdf(file_name):
                         "ability_id": returned_ability_id
                     }
                 )
+
+def insert_keywords_for_skill_type(skill_type: SkillType):
+    print(f"Inserting keywords for {skill_type}")
+
+    with engine.begin() as conn:
+        rows = conn.execute(text(f"SELECT id, name, def FROM {skill_type};")).fetchall()
+        for row in rows:
+            keywords = re.findall(r'\[(.*?)\]', getattr(row, "def", None))
+            for keyword in keywords:
+                returned_keyword_id = conn.execute(
+                    text("""
+                        INSERT INTO keyword(name) VALUES (:name)
+                        ON CONFLICT (name) DO UPDATE
+                            SET name = EXCLUDED.name
+                        RETURNING id;
+                    """),
+                    {
+                        "name": clean_keyword(keyword)
+                    }
+                ).scalar()
+                conn.execute(
+                    text(f"""
+                        INSERT INTO {skill_type}_keyword({skill_type}_id, keyword_id)
+                        VALUES (:{skill_type}_id, :keyword_id)
+                        ON CONFLICT DO NOTHING;
+                    """),
+                    {
+                        f"{skill_type}_id": row.id,
+                        "keyword_id": returned_keyword_id
+                    }
+                )
+
+def clean_keyword(text):
+    return re.sub(r'[^a-z\s]', '', text.lower())
