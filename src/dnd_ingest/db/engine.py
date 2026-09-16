@@ -1,15 +1,12 @@
 import os
 import sys
 from pathlib import Path
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 
-if getattr(sys, 'frozen', False):
-    env_path = Path(sys.executable).parent / ".env"
-    load_dotenv(dotenv_path=env_path)
-else:
-    load_dotenv(find_dotenv())
+env_path = Path(__file__).parent / ".env"
+load_dotenv(env_path)
 
 db_url = URL.create(
     drivername="postgresql+psycopg2",
