@@ -62,5 +62,3 @@ def nuke_database_and_generate_prompts():
     insert_seed()
     get_system_prompt_for_tags(for_passives=True)
     get_system_prompt_for_tags(for_passives=False)
-
-nuke_database_and_generate_prompts()

@@ -1,5 +1,5 @@
-from sumi_dnd.tag import TargetType, Effect, seed_tags
-from sumi_dnd.db import get_engine, reinitialize_database
+from .tag_class import TargetType, Effect
+from sumi_dnd.db import get_engine
 from sqlalchemy import text
 from typing import Literal
 from pathlib import Path
