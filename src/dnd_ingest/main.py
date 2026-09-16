@@ -12,7 +12,3 @@ def main():
     for skill_type in SKILL_TYPES: insert_keywords_for_skill_type(skill_type)
     seed_tags()
     for skill_type in SKILL_TYPES: insert_tags_for_skills(skill_type)
-
-__all__ = [
-    "main",
-]
