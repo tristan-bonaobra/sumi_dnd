@@ -1,5 +1,5 @@
-from sumi_dnd.tag import TargetType, Effect
-from sumi_dnd.db import get_engine
+from dnd_ingest.tag import TargetType, Effect
+from dnd_ingest.db import get_engine
 from sqlalchemy import text
 
 engine = get_engine()

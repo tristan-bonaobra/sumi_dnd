@@ -1,4 +1,4 @@
-from sumi_dnd.db import db_engine
+from dnd_ingest.db import db_engine
 from sqlalchemy import text
 import pandas as pd
 
@@ -53,7 +53,7 @@ def get_query_for_table(table_name: str, cmd_dict: dict):
     if clauses: return text(query)
 
 def main():
-    print(f"Welcome to sumi_dnd!\nExample cmd: 'effect:buff target:multi'")
+    print(f"Welcome to dnd_ingest!\nExample cmd: 'effect:buff target:multi'")
     with engine.connect() as conn:
         while True:
             cmd = input("> ")

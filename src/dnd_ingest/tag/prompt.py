@@ -1,4 +1,4 @@
-from sumi_dnd.db import get_engine, reinitialize_database
+from dnd_ingest.db import get_engine, reinitialize_database
 from sqlalchemy import text
 from pathlib import Path
 from collections import defaultdict

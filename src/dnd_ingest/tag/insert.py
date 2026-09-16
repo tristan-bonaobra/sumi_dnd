@@ -1,5 +1,5 @@
 from .tag_class import TargetType, Effect
-from sumi_dnd.db import get_engine
+from dnd_ingest.db import get_engine
 from sqlalchemy import text
 from typing import Literal
 from pathlib import Path

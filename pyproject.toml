@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-sumi-dnd = "sumi_dnd:main"
+sumi-dnd = "dnd_ingest:main"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]
@@ -33,4 +33,4 @@ dev = [
 ]
 
 [tool.deptry]
-known_first_party = ["sumi_dnd"]
+known_first_party = ["dnd_ingest"]

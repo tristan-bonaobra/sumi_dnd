@@ -1,5 +1,5 @@
-from sumi_dnd.pdf import extract_classes_from_pdf
-from sumi_dnd.db import get_engine
+from dnd_ingest.pdf import extract_classes_from_pdf
+from dnd_ingest.db import get_engine
 from sqlalchemy import text
 from typing import Literal
 from pathlib import Path
@@ -13,7 +13,7 @@ current_file = Path(__file__).resolve()
 project_root = next(p for p in current_file.parents if (p / "pyproject.toml").exists()) # Bold assumption
 
 dm_dir = project_root / "dm"
-sql_dir = project_root / "src" / "sumi_dnd" / "sql"
+sql_dir = project_root / "src" / "dnd_ingest" / "sql"
 seed_source_path = sql_dir / "seed.sql"
 
 def insert_pdf(file_name):

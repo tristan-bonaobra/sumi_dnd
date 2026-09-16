@@ -1,9 +1,9 @@
-from sumi_dnd.db import get_engine
+from dnd_ingest.db import get_engine
 from sqlalchemy import text
 from pathlib import Path
 
 engine = get_engine()
-sumi_dnd_dir = Path(__file__).resolve().parents[1]
+dnd_ingest_dir = Path(__file__).resolve().parents[1]
 script_dir = Path(__file__).parent
 schema_source_path = script_dir / "sql" / "schema.sql"
 
