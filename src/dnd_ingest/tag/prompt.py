@@ -53,6 +53,7 @@ def get_system_prompt_for_tags(for_passives=False) -> str:
     return system_prompt
 
 def insert_seed():
+    print("Inserting old seed data")
     with engine.begin() as conn:
         with open(script_dir / "sql" / "seed.sql", "r", encoding="utf-8") as file:
             conn.execute(text(file.read()))

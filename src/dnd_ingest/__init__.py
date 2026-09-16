@@ -1,2 +1,5 @@
-def main() -> None:
-    print("Hello from sumi-dnd!")
+from .main import main
+
+__all__ = [
+    "main",
+]
