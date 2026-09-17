@@ -9,12 +9,8 @@ SkillType = Literal["ability", "passive"]
 
 engine = get_engine()
 
-current_file = Path(__file__).resolve()
-project_root = next(p for p in current_file.parents if (p / "pyproject.toml").exists()) # Bold assumption
-
-dm_dir = project_root / "dm"
-sql_dir = project_root / "src" / "dnd_ingest" / "sql"
-seed_source_path = sql_dir / "seed.sql"
+script_dir = Path(__file__).parent
+dm_dir = script_dir / "dm"
 
 def insert_pdf(file_name):
     with engine.begin() as conn:

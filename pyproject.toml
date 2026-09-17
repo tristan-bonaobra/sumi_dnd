@@ -1,7 +1,7 @@
 [project]
-name = "sumi-dnd"
-version = "0.1.0"
-description = "Add your description here"
+name = "dnd-app"
+version = "0"
+description = "Search interface layer for Realms Unknown."
 readme = "README.md"
 authors = [
     { name = "Tristan Bonaobra", email = "316808543+tristan-bonaobra@users.noreply.github.com" }
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-sumi-dnd = "dnd_ingest:main"
+dnd-app = "dnd_ingest:main"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]
@@ -33,4 +33,4 @@ dev = [
 ]
 
 [tool.deptry]
-known_first_party = ["dnd_ingest"]
+known_first_party = ["dnd_ingest", "dnd_app"]

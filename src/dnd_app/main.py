@@ -1,4 +1,4 @@
-from dnd_ingest.db import db_engine
+from dnd_ingest.db import get_engine
 from sqlalchemy import text
 import pandas as pd
 
@@ -24,7 +24,7 @@ TABLE_COLUMNS = {
     "skill_search": {"Effects", "Skill", "Target Type", "Skill Type", "Class"}
 }
 
-engine = db_engine.get_engine()
+engine = get_engine()
 
 def parse_cmd(cmd: str) -> dict:
     cmd_dict = {}

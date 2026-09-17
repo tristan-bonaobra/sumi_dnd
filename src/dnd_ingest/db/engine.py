@@ -5,7 +5,13 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 
-env_path = Path(__file__).parent / ".env"
+# Finding .env depends on whether we're a .py file hiding in a subpackage or a .exe file sitting alone in dist/
+if getattr(sys, 'frozen', False):
+    base_dir = Path(sys._MEIPASS)
+else:
+    base_dir = Path(__file__).parent
+
+env_path = base_dir / ".env"
 load_dotenv(env_path)
 
 db_url = URL.create(
