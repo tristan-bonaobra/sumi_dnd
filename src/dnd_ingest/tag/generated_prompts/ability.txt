@@ -1,18 +1,10 @@
 Choose one appropriate target type and at least one effect. Below are examples.
 
-Prompt: [Stun] a single enemy and another random enemy,.
-Target type: Multi
-Effects: CC
-
-Prompt: [Stun] all enemies and deal half [WIS base] dark damage.
-Target type: Multi
-Effects: CC
-
-Prompt: [Stun] a single enemy for 1 round.
+Prompt: Apply [Charm] to a single enemy for 2 rounds.
 Target type: Single
 Effects: CC
 
-Prompt: [Stun] a single enemy.
+Prompt: Inflict [Puppeted] to a single enemy for 5 rounds.
 Target type: Single
 Effects: CC
 
@@ -20,7 +12,7 @@ Prompt: Apply [Dark Plague] on a single target for 3 rounds.
 Target type: Single
 Effects: Damage
 
-Prompt: Deal [CHA base] holy damage to a single enemy.
+Prompt: Deal 2x [STR base] physical damage to target enemy.
 Target type: Single
 Effects: Damage
 
@@ -64,7 +56,7 @@ Prompt: Convert [Ki] to [Regeneration].
 Target type: Self
 Effects: Sustain
 
-Prompt: Gain [Defense] for 2 rounds.
+Prompt: Gain [Defense+] for 3 rounds.
 Target type: Self
 Effects: Sustain
 
@@ -112,11 +104,11 @@ Prompt: Grant [Parry].
 Target type: Revenge
 Effects: Damage
 
-Prompt: Grant a single ally [Double Cast].
+Prompt: Grant a single ally +1 [STR] and +1 [INT].
 Target type: Single
 Effects: Buff
 
-Prompt: Grant a single ally +1 [STR] and +1 [INT].
+Prompt: Grant a single ally [Double Cast].
 Target type: Single
 Effects: Buff
 
@@ -124,7 +116,7 @@ Prompt: Grant all allies [Inspire] and enemies [Discourage].
 Target type: Multi
 Effects: Buff
 
-Prompt: Grant the party [Legato] for 3 rounds.
+Prompt: Grant the party +1 STR and +1 DEX for 3 rounds.
 Target type: Multi
 Effects: Buff
 
@@ -175,6 +167,14 @@ Effects: Summon
 Prompt: Target ally gains [Warp].
 Target type: Single
 Effects: Stealth
+
+Prompt: [Stun] a single enemy and another random enemy,.
+Target type: Multi
+Effects: CC
+
+Prompt: [Stun] all enemies and deal half [WIS base] dark damage.
+Target type: Multi
+Effects: CC
 
 Notes:
 - Damage targets health. Debuffs are non-damaging effects that apply harmful status and multipliers.
