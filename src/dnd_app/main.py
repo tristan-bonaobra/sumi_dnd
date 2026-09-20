@@ -1,4 +1,4 @@
-from dnd_ingest.db import get_engine
+from dnd_app.db import get_engine
 from sqlalchemy import text
 import pandas as pd
 
