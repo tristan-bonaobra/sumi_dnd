@@ -53,11 +53,11 @@ def get_query_for_table(table_name: str, cmd_dict: dict):
     if clauses: return text(query)
 
 def main():
-    print(f"Welcome to dnd_ingest!\nExample cmd: 'effect:buff target:multi'")
-    with engine.connect() as conn:
-        while True:
-            cmd = input("> ")
-            cmd_dict = parse_cmd(cmd)
+    print(f"Realms Unknown search interface\nExample cmd: 'effect:buff target:multi'")
+    while True:
+        cmd = input("> ")
+        cmd_dict = parse_cmd(cmd)
+        with engine.connect() as conn:
             for table_name in TABLE_COLUMNS:
                 read_params = get_read_params_for_table(table_name, cmd_dict)
                 query = get_query_for_table(table_name, cmd_dict)

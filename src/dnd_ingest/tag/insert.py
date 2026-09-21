@@ -14,32 +14,34 @@ def insert_tags_for_skills(skill_type: SkillType):
     with open(script_dir / "generated_prompts" / f"{skill_type}.txt", "r") as file:
         system_prompt = file.read()
 
-    with engine.begin() as conn:
+    with engine.connect() as conn:
         rows = conn.execute(text(f"SELECT * FROM {skill_type};")).fetchall()
         n_rows = len(rows)
-        i = 0
-        for row in rows:
-            if i == 0:
-                print(f"Reading system prompt ({len(system_prompt.encode("utf-8"))} characters)")
 
-            bot_response = ollama.chat(
-                model="llama3.2",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": getattr(row, "def")}
-                ],
-                format=get_response_format(),
-                options={
-                    "temperature": 0,
-                    "seed": 0,
-                },
-            )
-            bot_response = json.loads(bot_response.message.content)
+    i = 0
+    for row in rows:
+        if i == 0:
+            print(f"Reading system prompt ({len(system_prompt.encode("utf-8"))} characters)")
 
-            i += 1
-            progress = round((i / round(n_rows)) * 100)
-            print(f"Inserting tags for {skill_type} ({progress}%)\t", end="\r", flush=True)
+        bot_response = ollama.chat(
+            model="llama3.2",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": getattr(row, "def")}
+            ],
+            format=get_response_format(),
+            options={
+                "temperature": 0,
+                "seed": 0,
+            },
+        )
+        bot_response = json.loads(bot_response.message.content)
 
+        i += 1
+        progress = round((i / round(n_rows)) * 100)
+        print(f"Inserting tags for {skill_type} ({progress}%)\t", end="\r", flush=True)
+
+        with engine.connect() as conn:
             conn.execute(
                 text(f"""
                     INSERT INTO {skill_type}_target_type ({skill_type}_id, type_id)
@@ -62,6 +64,8 @@ def insert_tags_for_skills(skill_type: SkillType):
                     """),
                     {"skill_id": row.id, "generated_effect": generated_effect}
                 )
+
+            conn.commit()
     print()
 
 def get_response_format():
