@@ -10,55 +10,16 @@
 # NAMING CONVENTIONS
 # "Passives" and "abilities" are in plural when refering to their respective columns.
 
+# For the left card we'll go by markers in the text itself.
+# For the right card we'll assume only that subheaders are bold, and uniquely so.
+
+from dnd_ingest.config import CONFIG
+from collections import defaultdict
 import pdfplumber
 import math
 import re
-from collections import defaultdict
 
-# Measurements based on Blade Dancer 22 Aug 2026
-TEMPLATE_CARD_WIDTH = 742.215545074351
-TEMPLATE_CARD_HEIGHT = 521.997746250093
-expected_card_ratio = TEMPLATE_CARD_WIDTH / TEMPLATE_CARD_HEIGHT
-CARD_RATIO_BUFFER_PCT = 0.025
-CARD_VSPLIT_OFFSET = 5 # Split some distance to the right of where Passive starts
-
-# Split the stat card by whatever comes first.
-SUBHEADERS_STAT_CARD = ["main", "main stat", "sub", "sub stat", "simplified", "bonus", "bonus attribute"]
-
-# This tells us we're looking at a skill card.
-MARKERS_SKILL_CARD = ["class abilities"]
-
-# We split the skill card where these words appears.
-MARKER_PASSIVE_COLUMN = "passive"
-MARKER_SUBCLASS_FOOTER = "subclass"
-SUBCLASS_FOOTER_BUFFER_PCT = 0.1
-
-# Sometimes the abilities column bleeds into the passives column.
-# This indent is expressed as a percentage of the width of the "Passive" subheader.
-PASSIVE_COLUMN_INDENT_PCT = 0.2
-
-MARKER_CD = "CD:"
-MARKER_MP = "Cost:"
-
-# These tell us what font we're looking at.
-# Important for subheaders and comments.
-MARKERS_ITALICS = ["italic", "oblique"]
-MARKERS_BOLD = ["bold", "bd", "heavy", "thick", "blk", "black", "medi"]
-
-# We assume that all comments are roughly this color and italic.
-CMFORMAT_NSC = (0.5725, 0.5725, 0.5725) # This assumes DeviceRGB.
-CMFORMAT_NSC_BUFFER = 0.075
-
-# A default is set for these values by pdfplumber.
-EXTRACT_TEXT_X_TOLERANCE = 0.05
-EXTRACT_TEXT_Y_TOLERANCE = 0.05
-
-# Crop headers starting from some space underneath the column header.
-# "Passive" gets split due to the indent. It's noise, anyway.
-COLUMN_HEADER_BUFFER_PCT = 0.5
-
-# For the left card we'll go by markers in the text itself.
-# For the right card we'll assume only that subheaders are bold, and uniquely so.
+expected_card_ratio = CONFIG["TEMPLATE_CARD_WIDTH"] / CONFIG["TEMPLATE_CARD_HEIGHT"]
 
 #-------------------------------------------------------------------------------------------------+
 #   EXTRACT ALL
@@ -104,10 +65,10 @@ class_template_fields = list(make_class_template())
 def extract_data_from_card_on_page(card, page):
     card_view = crop_page_to_image(page, card).filter(filter_remove_comments)
     card_text = custom_extract_text(card_view)
-    is_skill_card = confirm_any_marker_in_text(MARKERS_SKILL_CARD, card_text)
+    is_skill_card = confirm_any_marker_in_text(CONFIG["MARKERS_SKILL_CARD"], card_text)
     if is_skill_card:
         extracted_data = {
-            "name": split_text_by_nearest_marker(card_text, MARKERS_SKILL_CARD)[0][:-1],
+            "name": split_text_by_nearest_marker(card_text, CONFIG["MARKERS_SKILL_CARD"])[0][:-1],
             "abilities": [],
             "passives": []
         }
@@ -123,7 +84,7 @@ def extract_data_from_card_on_page(card, page):
 #-------------------------------------------------------------------------------------------------+
 
 def extract_data_from_stat_card_text(text):
-    body = split_text_by_nearest_marker(text, SUBHEADERS_STAT_CARD)
+    body = split_text_by_nearest_marker(text, CONFIG["SUBHEADERS_STAT_CARD"])
     extracted_data = {
         "name": body[0].split("\n")[0]
     }
@@ -175,8 +136,8 @@ def extract_subheaders_from_view(view):
 def extract_cd_and_cost_from_text(text):
     followed_by_any_spaces = r"\s*"
     then_select_just_the_numbers = r"(\d+)"
-    cd_match = re.search(rf"{MARKER_CD}{followed_by_any_spaces}{then_select_just_the_numbers}", text)
-    cost_match = re.search(rf"{MARKER_MP}{followed_by_any_spaces}{then_select_just_the_numbers}", text)
+    cd_match = re.search(rf"{CONFIG["MARKER_CD"]}{followed_by_any_spaces}{then_select_just_the_numbers}", text)
+    cost_match = re.search(rf"{CONFIG["MARKER_MP"]}{followed_by_any_spaces}{then_select_just_the_numbers}", text)
     cd = int(cd_match.group(1)) if cd_match else None
     cost = int(cost_match.group(1)) if cost_match else None
     return cd, cost
@@ -268,7 +229,7 @@ def analyze_chars(page):
     for char in page.chars:
         size = char["size"]
         fontname = char["fontname"]
-        is_italic = confirm_any_marker_in_text(MARKERS_ITALICS, char["fontname"])
+        is_italic = confirm_any_marker_in_text(CONFIG["MARKERS_ITALICS"], char["fontname"])
         nsc = char["non_stroking_color"]
         key = (size, fontname, is_italic, nsc)
         cformat = cformats[key]
@@ -279,11 +240,17 @@ def analyze_chars(page):
     return cformats
 
 def custom_extract_text(page): # Not to be confused with page.extract_text()
-    text = page.extract_text(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
+    text = page.extract_text(
+        x_tolerance=CONFIG["EXTRACT_TEXT_X_TOLERANCE"],
+        y_tolerance=CONFIG["EXTRACT_TEXT_Y_TOLERANCE"]
+    )
     return text
 
 def custom_extract_words(page): # Not to be confused with page.extract_words()
-    words = page.extract_words(x_tolerance=EXTRACT_TEXT_X_TOLERANCE, y_tolerance=EXTRACT_TEXT_Y_TOLERANCE)
+    words = page.extract_words(
+        x_tolerance=CONFIG["EXTRACT_TEXT_X_TOLERANCE"],
+        y_tolerance=CONFIG["EXTRACT_TEXT_Y_TOLERANCE"]
+    )
     return words
 
 def extract_cards_from_page(page):
@@ -296,14 +263,14 @@ def confirm_image_is_card(image):
     image_height = image["height"]
     image_ratio = image_width / image_height
     ratio_diff = abs(image_ratio - expected_card_ratio)
-    within_buffer = ratio_diff <= (expected_card_ratio * CARD_RATIO_BUFFER_PCT)
+    within_buffer = ratio_diff <= (expected_card_ratio * CONFIG["CARD_RATIO_BUFFER_PCT"])
     is_card = within_buffer
     return is_card
 
 def confirm_char_matches_cmformat(char):
-    color_dist = math.dist(char["non_stroking_color"], CMFORMAT_NSC)
-    is_color_cmformat = color_dist <= CMFORMAT_NSC_BUFFER
-    is_italic = confirm_any_marker_in_text(MARKERS_ITALICS, char["fontname"])
+    color_dist = math.dist(char["non_stroking_color"], CONFIG["CMFORMAT_NSC"])
+    is_color_cmformat = color_dist <= CONFIG["CMFORMAT_NSC_BUFFER"]
+    is_italic = confirm_any_marker_in_text(CONFIG["MARKERS_ITALICS"], char["fontname"])
     is_cmformat = is_color_cmformat and is_italic
     return is_cmformat
 
@@ -323,20 +290,20 @@ def crop_whole_page_to_skill_column_views_on_card(page, card):
     card_view = crop_page_to_image(page, card)
     # cheader: column header
     page_words = custom_extract_words(card_view)
-    cheader = find_first_instance_of_word_in_page_words(MARKER_PASSIVE_COLUMN, page_words) # The subheader at which to split.
+    cheader = find_first_instance_of_word_in_page_words(CONFIG["MARKER_PASSIVE_COLUMN"], page_words) # The subheader at which to split.
     if cheader is None:
         return
     cheader_width = cheader["x1"] - cheader["x0"]
     cheader_height = cheader["bottom"] - cheader["top"]
-    indent = cheader_width * PASSIVE_COLUMN_INDENT_PCT
-    shave = cheader_height * COLUMN_HEADER_BUFFER_PCT
+    indent = cheader_width * CONFIG["PASSIVE_COLUMN_INDENT_PCT"]
+    shave = cheader_height * CONFIG["COLUMN_HEADER_BUFFER_PCT"]
     split_x = cheader["x0"] + indent
     top = cheader["bottom"] + shave
     # Crop out the "subclasses" footer.
-    footer = find_first_instance_of_word_in_page_words(MARKER_SUBCLASS_FOOTER, page_words)
+    footer = find_first_instance_of_word_in_page_words(CONFIG["MARKER_SUBCLASS_FOOTER"], page_words)
     if footer:
         footer_height = footer["bottom"] - footer["top"]
-        footer_buffer = footer_height * SUBCLASS_FOOTER_BUFFER_PCT
+        footer_buffer = footer_height * CONFIG["SUBCLASS_FOOTER_BUFFER_PCT"]
         box_bottom = footer["top"] - footer_buffer
     else:
         box_bottom = card["bottom"]
@@ -380,7 +347,7 @@ def filter_remove_comments(object):
 def filter_keep_subheaders(object): # If it's bold, it's a subheader
     is_char = object["object_type"] == "char"
     if is_char:
-        is_bold = confirm_any_marker_in_text(MARKERS_BOLD, object["fontname"])
+        is_bold = confirm_any_marker_in_text(CONFIG["MARKERS_BOLD"], object["fontname"])
         if is_bold:
             return True
     return False
@@ -389,10 +356,11 @@ def filter_keep_subheaders(object): # If it's bold, it's a subheader
 #   TEST
 #-------------------------------------------------------------------------------------------------+
 
-# from pathlib import Path
-# import json
+def sonathan():
+    from pathlib import Path
+    import json
 
-# repo_dir = Path(__file__).resolve().parents[2]
-# dm_dir = repo_dir / "dm"
-# pdf_path = dm_dir / "class_knight.pdf"
-# print(json.dumps(extract_classes_from_pdf(pdf_path), indent=4))
+    repo_dir = Path(__file__).resolve().parents[3]
+    dm_dir = repo_dir / "src" / "dnd_ingest" / "pdf" / "dm"
+    pdf_path = dm_dir / "class_knight.pdf"
+    print(json.dumps(extract_classes_from_pdf(pdf_path), indent=4))

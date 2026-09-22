@@ -1,10 +1,18 @@
 Choose one appropriate target type and at least one effect. Below are examples.
 
+Prompt: [Fear], [Stun], and [Slow] triggers Dread on the target.
+Target type: Auto
+Effects: Damage
+
+Prompt: [Stun] enemies automatically casts Open Fire on them at no cost.
+Target type: Auto
+Effects: Damage
+
 Prompt: Abilities grant [Bladedancer Form] until attacked.
 Target type: Self
 Effects: Buff
 
-Prompt: Gain +1 CHA for each enemy inflicted with [Strung].
+Prompt: Gain [Level] STR.
 Target type: Self
 Effects: Buff
 
@@ -64,10 +72,6 @@ Prompt: Every round, cleanse a random ally of one debuff, infliction, or crowd c
 Target type: Random
 Effects: Cleanse
 
-Prompt: Gain +1 STR and +1 CON when weapon slot is empty.
-Target type: Sacrifice
-Effects: Buff
-
 Prompt: Gain -3 CON. On death, ressurect with 50% max health. Refreshes every battle.
 Target type: Sacrifice
 Effects: Sustain
@@ -83,6 +87,10 @@ Effects: Sustain
 Prompt: On turn skip, all party members gain [Defense] for 1 round.
 Target type: Multi
 Effects: Sustain
+
+Prompt: Gain +1 STR and +1 CON when weapon slot is empty.
+Target type: Sacrifice
+Effects: Buff
 
 Prompt: Gain advantage on dodge rolls.
 Target type: Self
@@ -131,14 +139,6 @@ Effects: Buff
 Prompt: The next ally that dies will be resurrected. Occurs once per battle.
 Target type: Single
 Effects: Sustain
-
-Prompt: [Fear], [Stun], and [Slow] triggers Dread on the target.
-Target type: Auto
-Effects: Damage
-
-Prompt: [Stun] enemies automatically casts Open Fire on them at no cost.
-Target type: Auto
-Effects: Damage
 
 Notes:
 - Damage targets health. Debuffs are non-damaging effects that apply harmful status and multipliers.

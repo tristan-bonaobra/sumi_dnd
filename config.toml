@@ -1,0 +1,74 @@
+# Files in dnd_ingest/pdf/dm to insert into database
+INSERT_FILES = ["class_knight.pdf", "class_warrior.pdf"]
+
+#-------------------------------------------------------------------------------------------------+
+#   ALL CARDS
+#-------------------------------------------------------------------------------------------------+
+
+# Expected card size
+# Measurements based on Blade Dancer 22 Aug 2026.
+TEMPLATE_CARD_WIDTH = 742.215545074351
+TEMPLATE_CARD_HEIGHT = 521.997746250093
+CARD_RATIO_BUFFER_PCT = 0.025
+
+# Crop out headers starting from some space underneath the column header.
+# "Passive" gets split due to the indent. It's noise, anyway.
+COLUMN_HEADER_BUFFER_PCT = 0.5
+
+#-------------------------------------------------------------------------------------------------+
+#   STAT CARDS
+#-------------------------------------------------------------------------------------------------+
+
+# Split the stat card by whatever comes first.
+SUBHEADERS_STAT_CARD = [
+    "main",
+    "main stat",
+    "sub",
+    "sub stat",
+    "simplified",
+    "bonus",
+    "bonus attribute"
+]
+
+#-------------------------------------------------------------------------------------------------+
+#   SKILL CARDS
+#-------------------------------------------------------------------------------------------------+
+
+# Known markers to pick out skill cards
+MARKERS_SKILL_CARD = ["class abilities"]
+
+# Crop the footer out of the skill card based on where this word appears
+MARKER_SUBCLASS_FOOTER = "subclass"
+SUBCLASS_FOOTER_BUFFER_PCT = 0.1
+
+# Split skill cards vertically based on where this word appears
+MARKER_PASSIVE_COLUMN = "passive"
+
+# Split some distance to the right of where MARKER_PASSIVE_COLUMN starts.
+# This is to catch occasional bleed from the Ability column.
+# The indent is expressed as a percentage of the width of the marking subheader.
+PASSIVE_COLUMN_INDENT_PCT = 0.2
+
+# Markers to pick out numerical values
+MARKER_CD = "CD:"
+MARKER_MP = "Cost:"
+
+#-------------------------------------------------------------------------------------------------+
+#   PDFPLUMBER
+#-------------------------------------------------------------------------------------------------+
+
+# Markers in the font name to tell us what font we're looking at.
+# Important for subheaders and comments.
+MARKERS_ITALICS = ["italic", "oblique"]
+MARKERS_BOLD = ["bold", "bd", "heavy", "thick", "blk", "black", "medi"]
+
+# We assume that all comments are roughly this color and italic.
+# This assumes DeviceRGB.
+CMFORMAT_NSC = [0.5725, 0.5725, 0.5725]
+CMFORMAT_NSC_BUFFER = 0.075
+
+# Tolerated variance for the positions of individual characters.
+# Anything within the tolerated margin is considered within the same line.
+# A default is set for these values by pdfplumber.
+EXTRACT_TEXT_X_TOLERANCE = 0.05
+EXTRACT_TEXT_Y_TOLERANCE = 0.05
