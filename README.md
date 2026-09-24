@@ -42,6 +42,7 @@ Here's how to use this thing, for both users and admins.
 
 2. Extract the latest binaries into `src/dnd_ingest/pdf/dm` (see above link) and configure `config.toml` in the root folder accordingly.
 3. Add and configure `.env` files to connect to your database (see below format).
+4. Call `dnd_ingest.main`.
 
 ### .env format
 
