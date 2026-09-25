@@ -2,7 +2,29 @@
 
 # About
 
-sumi_dnd is a specialized Canva PDF extractor and search interface layer for Realms Unknown.
+Canva-to-query pipeline with LLM-powered metadata generation for Realms Unknown. Search by effects, target types, shared keywords, and more via user interface.
+
+## FAQ
+
+### How does this extract data from the Canva layout?
+
+A full-quality PDF extract is downloaded from the Canva website for the program to manually snip and stitch. [read more](#dnd_ingest.pdf)
+
+### Manually? What if some text moves 2 pixels to the right?
+
+There are built-in buffers to account for slight deviations and bleed (see `config.toml`). [read more](#dnd_ingest.pdf)
+
+### Why manual instead of computer vision?
+
+Objectivity. The Canva layout is consistent enough.
+
+### Do I have to pay API fees for the metadata-generating LLM?
+
+No need to worry about that. This uses [**Llama 3.2**](https://ollama.com/library/llama3.2) **via** [**Ollama**](https://github.com/ollama/ollama) on your local machine by default. [read more](#dnd_ingest.tag)
+
+### What if the LLM hallucinates tags?
+
+It happens, but I have designed and tested the prompt to produce accurate enough results (see `dnd_ingest/tag/generated_prompts`).
 
 # Usage guide
 
@@ -112,40 +134,19 @@ There are built-in buffers to account for slight deviations.
 
 Generates and inserts effect and target type tags for abilities and passives.
 
+This is entirely local. No need to worry about API fees.
+
 | Feature | Description |
 | :- | :- |
 | `TargetType` | Class used for seeding and prompting. |
 | `Effect` | Class used for seeding and prompting. |
 | `seed_tags` | Inserts tags into the database's tag dimension tables as normalization. |
 | `nuke_database_and_generate_prompts` | Clears the database to insert legacy manual seed data to use in the LLM prompt. |
-| `insert_tags_for_skills` | Chooses tags using [**Llama 3.2**](https://ollama.com/library/llama3.2) **via** [**Ollama**](https://github.com/ollama/ollama) and inserts them into the database junction tables. |
+| `insert_tags_for_skills` | Chooses tags using local [**Llama 3.2**](https://ollama.com/library/llama3.2) **via** [**Ollama**](https://github.com/ollama/ollama) and inserts them into the database junction tables. |
 
 **⚠️ Prompt generation deletes the existing database.**
-
-# Other features
-
-Features too minor for their own sections.
-
-## dnd_ingest/config.py
-
-Handles reading `config.toml` at project root.
-
-## dnd_ingest/main.py
-
-Orchestrates database ingestion by calling the above functions. 
-
-## dnd_ingest.db
-
-Works similarly to `dnd_ingest.db`.
-
-**⚠️ A .env is expected here containing `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`.**
-
-## dnd_app/main.py
-
-Code for the frontend CLI. Uses fuzzy search.
 
 # Credits
 
 Tristan Bonaobra (Author)
-
 Zedryck Pugayan (Assets)
