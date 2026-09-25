@@ -2,7 +2,7 @@
 
 # About
 
-sumi_dnd is a specialized Canva PDF parser and search interface layer for Realms Unknown.
+sumi_dnd is a specialized Canva PDF extractor and search interface layer for Realms Unknown.
 
 # Usage guide
 
@@ -26,7 +26,7 @@ Here's how to use this thing, for both users and admins.
 
 1. Set up a PostgreSQL database.
 
-   * **IMPORTANT**: Multiple steps during the ingestion process wipe the database entirely.
+   * **IMPORTANT**: Multiple steps during the ingestion process wipe the database entirely. There's a lot of nuking going on but I'd say the important baseline is the binaries and everything else is just the translation layer on top.
 
 2. Extract the latest binaries into `src/dnd_ingest/pdf/dm` (see above link) and configure `config.toml` in the root folder accordingly.
 3. Add and configure `.env` files to connect to your database (see below format).
@@ -52,7 +52,15 @@ Here's how to use this thing, for both users and admins.
    > 
    > DB_PASSWORD=
 
-# dnd_ingest.db
+# Main features
+
+Subpackages and stuff that makes this turn.
+
+## Cloud infrastructure
+
+The apps under Releases connect to a free and secure cloud database provided by [**Neon**](https://github.com/neondatabase/neon).
+
+## dnd_ingest.db
 
 Handles database connection and reinitialization.
 
@@ -65,25 +73,25 @@ Handles database connection and reinitialization.
 
 **⚠️ Reinitialization deletes the existing database.**
 
-## Reinitialization steps
+### Reinitialization steps
 
 1. Nuke existing database
 2. Create `readonly` role with password `READONLY_PASSWORD`
 3. Create tables and views (see `sql/schema.sql`)
 
-# dnd_ingest.pdf
+## dnd_ingest.pdf
 
 Handles the PDF-to-database data pipeline.
 
 | Feature | Description |
 | :- | :- |
-| `extract_classes_from_pdf` |  Uses [**pdfplumber**](https://github.com/jsvine/pdfplumber) to convert Realms Unknown Canva PDFs into JSON. |
+| `extract_classes_from_pdf` |  Uses [**pdfplumber**](https://github.com/jsvine/pdfplumber) analysis to convert Realms Unknown Canva PDFs into JSON. |
 | `insert_pdf` |  Inserts the extracted JSONs into the database. |
 | `insert_keywords_for_skill_type` |  Uses regular expressions to extract keywords, wrapped in square brackets, and inserts them into the database. |
 
-**⚠️ The program assumes that all class cards look exactly as seen in `dm/class_template.pdf`.**
+**⚠️ The program assumes that all class cards look more or less as seen in `dm/class_template.pdf`.**
 
-## Canva formatting assumptions
+### Canva formatting assumptions
 
 1. All class cards have a copy of the same rectangular image behind them.
 2. All cards follow the same set of known markers in the text.
@@ -98,7 +106,9 @@ Handles the PDF-to-database data pipeline.
 
 7. The source PDF uses a DeviceRGB color space.
 
-# dnd_ingest.tag
+There are built-in buffers to account for slight deviations.
+
+## dnd_ingest.tag
 
 Generates and inserts effect and target type tags for abilities and passives.
 
