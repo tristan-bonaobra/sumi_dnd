@@ -1,22 +1,12 @@
 ### [Link to Realms Unknown Canva PDF binaries](https://drive.google.com/drive/folders/1zZixfmZYeETFU3_8plNsSCOCGb-4USUY?usp=sharing)
 
-
-
 # About
-
-
 
 sumi_dnd is a specialized Canva PDF parser and search interface layer for Realms Unknown.
 
-
-
 # Usage guide
 
-
-
 Here's how to use this thing, for both users and admins.
-
-
 
 ## For users
 
@@ -31,8 +21,6 @@ Here's how to use this thing, for both users and admins.
 | `type:` | ability, passive |
 | `class:` | knight, warrior |
 | `keyword:` | stun, defense+, rage, ... |
-
-
 
 ## For database admins
 
@@ -64,11 +52,7 @@ Here's how to use this thing, for both users and admins.
    > 
    > DB_PASSWORD=
 
-
-
 # dnd_ingest.db
-
-
 
 Handles database connection and reinitialization.
 
@@ -77,15 +61,9 @@ Handles database connection and reinitialization.
 | `get_engine` | Returns an [**SQLAlchemy**](https://github.com/sqlalchemy/sqlalchemy) engine to connect with the database. |
 | `reinitialize_database` | Initiates the reinitialization process. |
 
-
-
 **⚠️ A .env is expected here containing `DATABASE_URL` and `READONLY_PASSWORD`.**
 
-
-
 **⚠️ Reinitialization deletes the existing database.**
-
-
 
 ## Reinitialization steps
 
@@ -93,11 +71,7 @@ Handles database connection and reinitialization.
 2. Create `readonly` role with password `READONLY_PASSWORD`
 3. Create tables and views (see `sql/schema.sql`)
 
-
-
 # dnd_ingest.pdf
-
-
 
 Handles the PDF-to-database data pipeline.
 
@@ -107,11 +81,7 @@ Handles the PDF-to-database data pipeline.
 | `insert_pdf` |  Inserts the extracted JSONs into the database. |
 | `insert_keywords_for_skill_type` |  Uses regular expressions to extract keywords, wrapped in square brackets, and inserts them into the database. |
 
-
-
 **⚠️ The program assumes that all class cards look exactly as seen in `dm/class_template.pdf`.**
-
-
 
 ## Canva formatting assumptions
 
@@ -128,11 +98,7 @@ Handles the PDF-to-database data pipeline.
 
 7. The source PDF uses a DeviceRGB color space.
 
-
-
 # dnd_ingest.tag
-
-
 
 Generates and inserts effect and target type tags for abilities and passives.
 
@@ -144,59 +110,31 @@ Generates and inserts effect and target type tags for abilities and passives.
 | `nuke_database_and_generate_prompts` | Clears the database to insert legacy manual seed data to use in the LLM prompt. |
 | `insert_tags_for_skills` | Chooses tags using [**Llama 3.2**](https://ollama.com/library/llama3.2) **via** [**Ollama**](https://github.com/ollama/ollama) and inserts them into the database junction tables. |
 
-
-
 **⚠️ Prompt generation deletes the existing database.**
-
-
 
 # Other features
 
-
-
 Features too minor for their own sections.
-
-
 
 ## dnd_ingest/config.py
 
-
-
 Handles reading `config.toml` at project root.
-
-
 
 ## dnd_ingest/main.py
 
-
-
 Orchestrates database ingestion by calling the above functions. 
-
-
 
 ## dnd_ingest.db
 
-
-
 Works similarly to `dnd_ingest.db`.
-
-
 
 **⚠️ A .env is expected here containing `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`.**
 
-
-
 ## dnd_app/main.py
-
-
 
 Code for the frontend CLI. Uses fuzzy search.
 
-
-
 # Credits
-
-
 
 Tristan Bonaobra (Author)
 
