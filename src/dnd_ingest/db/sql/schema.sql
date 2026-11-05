@@ -1,3 +1,7 @@
+----------------------------------------------------------------------------------------------
+-- DIMENSIONS
+----------------------------------------------------------------------------------------------
+
 CREATE TABLE class (
 	id SERIAL PRIMARY KEY,
 	name TEXT UNIQUE,
@@ -45,6 +49,10 @@ CREATE TABLE keyword (
     name TEXT UNIQUE,
     def TEXT
 );
+
+----------------------------------------------------------------------------------------------
+-- JOINT TABLES
+----------------------------------------------------------------------------------------------
 
 CREATE TABLE class_stat (
 	class_id INT REFERENCES class(id) ON DELETE CASCADE,
@@ -106,6 +114,32 @@ CREATE TABLE keyword_effect (
     effect_id INT REFERENCES effect(id) ON DELETE CASCADE,
     PRIMARY KEY (keyword_id, effect_id)
 );
+
+----------------------------------------------------------------------------------------------
+-- INDICES
+----------------------------------------------------------------------------------------------
+
+CREATE INDEX idx_class_parent_id ON class(parent_id);
+
+CREATE INDEX idx_class_stat_stat_id ON class_stat(stat_id);
+CREATE INDEX idx_class_stat_type_id ON class_stat(type_id);
+
+CREATE INDEX idx_class_ability_ability_id ON class_ability(ability_id);
+CREATE INDEX idx_class_passive_passive_id ON class_passive(passive_id);
+
+CREATE INDEX idx_ability_target_type_type_id ON ability_target_type(type_id);
+CREATE INDEX idx_ability_effect_effect_id ON ability_effect(effect_id);
+CREATE INDEX idx_ability_keyword_keyword_id ON ability_keyword(keyword_id);
+
+CREATE INDEX idx_passive_target_type_type_id ON passive_target_type(type_id);
+CREATE INDEX idx_passive_effect_effect_id ON passive_effect(effect_id);
+CREATE INDEX idx_passive_keyword_keyword_id ON passive_keyword(keyword_id);
+
+CREATE INDEX idx_keyword_effect_effect_id ON keyword_effect(effect_id);
+
+----------------------------------------------------------------------------------------------
+-- FUNCTIONS
+----------------------------------------------------------------------------------------------
 
 CREATE FUNCTION add_class_stat (
     for_class_id INT,
@@ -193,6 +227,10 @@ CREATE FUNCTION add_keyword (
     END;
 $$ LANGUAGE plpgsql;
 
+----------------------------------------------------------------------------------------------
+-- SUBVIEWS
+----------------------------------------------------------------------------------------------
+
 CREATE VIEW v_ability_effects AS SELECT
     ability.id AS ability_id,
     ARRAY_TO_STRING(ARRAY_AGG(effect.name), ', ') AS all
@@ -240,6 +278,10 @@ LEFT JOIN passive ON passive.id = class_passive.passive_id
 LEFT JOIN passive_target_type ON passive_target_type.passive_id = passive.id
 LEFT JOIN target_type ON target_type.id = passive_target_type.type_id
 LEFT JOIN v_passive_effects ON v_passive_effects.passive_id = passive.id;
+
+----------------------------------------------------------------------------------------------
+-- MAIN VIEWS
+----------------------------------------------------------------------------------------------
 
 CREATE VIEW skill_search AS SELECT * FROM v_class_ability
 UNION ALL SELECT * FROM v_class_passive
