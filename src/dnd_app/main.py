@@ -45,10 +45,19 @@ def get_read_params_for_table(table_name: str, cmd_dict: dict) -> list[dict]:
 def get_query_for_table(table_name: str, cmd_dict: dict):
     query = f"SELECT * FROM {table_name} WHERE "
     clauses = []
-    
+
     for key, value in cmd_dict.items():
         column = KEY_COLUMN.get(key)
-        if (column is None) or (column not in TABLE_COLUMNS[table_name]): continue
+
+        if (column is None) or (column not in TABLE_COLUMNS[table_name]):
+            continue
+
+        elif key == "effect" and value.lower() == "buff":
+            clauses.append(f'("{column}" ILIKE :{key} AND "{column}" NOT ILIKE \'%debuff%\')')
+        
+        else:
+            clauses.append(f'"{column}" ILIKE :{key}')
+
         clauses.append(f'"{column}" ILIKE :{key}')
 
     if not clauses:
