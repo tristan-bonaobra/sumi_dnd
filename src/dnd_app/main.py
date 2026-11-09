@@ -75,7 +75,7 @@ def wrap_text(val, width=30):
 
 def main():
     print(f"Realms Unknown search interface\nExample cmd: 'effect:buff target:multi'")
-    
+
     while True:
         cmd = input("> ")
         cmd_dict = parse_cmd(cmd)
@@ -84,6 +84,10 @@ def main():
             for table_name in TABLE_COLUMNS:
                 read_params = get_read_params_for_table(table_name, cmd_dict)
                 query = get_query_for_table(table_name, cmd_dict)
+
+                if query is None:
+                    continue
+
                 df = pd.read_sql(query, conn, params=read_params)
 
                 if not df.empty:
