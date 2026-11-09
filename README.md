@@ -78,6 +78,27 @@ Here's how to use this thing, for both users and admins.
    > 
    > DB_PASSWORD=
 
+### Example output
+
+```text
+Nuking database
+Rebuilding database
+Inserting old seed data
+Generating system prompt for passives
+Generating system prompt for abilities
+Nuking database
+Rebuilding database
+Inserting class_knight.pdf
+Inserting class_warrior.pdf
+Inserting keywords for ability
+Inserting keywords for passive
+Seeding tags
+Reading system prompt (4205 characters)
+Inserting tags for ability (100%)
+Reading system prompt (3585 characters)
+Inserting tags for passive (100%)
+```
+
 # Main features
 
 Subpackages and stuff that makes this turn.
