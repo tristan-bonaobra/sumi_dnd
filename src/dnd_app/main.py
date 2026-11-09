@@ -45,12 +45,18 @@ def get_read_params_for_table(table_name: str, cmd_dict: dict) -> list[dict]:
 def get_query_for_table(table_name: str, cmd_dict: dict):
     query = f"SELECT * FROM {table_name} WHERE "
     clauses = []
+    
     for key, value in cmd_dict.items():
         column = KEY_COLUMN.get(key)
         if (column is None) or (column not in TABLE_COLUMNS[table_name]): continue
         clauses.append(f'"{column}" ILIKE :{key}')
+
+    if not clauses:
+        return
+    
     query += " AND ".join(clauses) + ";"
-    if clauses: return text(query)
+
+    return text(query)
 
 def main():
     print(f"Realms Unknown search interface\nExample cmd: 'effect:buff target:multi'")
