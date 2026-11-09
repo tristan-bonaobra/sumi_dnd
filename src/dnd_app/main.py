@@ -37,10 +37,16 @@ def parse_cmd(cmd: str) -> dict:
 
 def get_read_params_for_table(table_name: str, cmd_dict: dict) -> list[dict]:
     read_params = {}
+
     for key, value in cmd_dict.items():
         column = KEY_COLUMN.get(key)
-        if (column is None) or (column not in TABLE_COLUMNS[table_name]): continue
-        read_params[key] = f"%{value}%"
+
+        if (column is None) or (column not in TABLE_COLUMNS[table_name]):
+            continue
+
+        clean_value = value.strip().replace("-", " ").replace("_", " ")
+        read_params[key] = f"%{clean_value}%"
+
     return read_params
 
 def get_query_for_table(table_name: str, cmd_dict: dict):
@@ -74,7 +80,7 @@ def wrap_text(val, width=30):
     return "\n".join(textwrap.wrap(val, width=width))
 
 def main():
-    print(f"Realms Unknown search interface\nExample cmd: 'effect:buff target:multi'")
+    print(f"Realms Unknown search interface\nExample cmd: 'class:blade_dancer target:single effect:damage'")
 
     while True:
         cmd = input("> ")
