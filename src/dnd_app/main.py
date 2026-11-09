@@ -50,28 +50,29 @@ def get_read_params_for_table(table_name: str, cmd_dict: dict) -> list[dict]:
     return read_params
 
 def get_query_for_table(table_name: str, cmd_dict: dict):
-    query = f"SELECT * FROM {table_name} WHERE "
     clauses = []
-
+    seen_columns = set()
+    
     for key, value in cmd_dict.items():
         column = KEY_COLUMN.get(key)
 
-        if (column is None) or (column not in TABLE_COLUMNS[table_name]):
+        if (column is None) or (column not in TABLE_COLUMNS[table_name]): 
+            continue
+            
+        if column in seen_columns:
             continue
 
-        elif key == "effect" and value.lower() == "buff":
-            clauses.append(f'("{column}" ILIKE :{key} AND "{column}" NOT ILIKE \'%debuff%\')')
+        seen_columns.add(column)
         
+        if key == "effect" and value.lower() == "buff":
+            clauses.append(f'("{column}" ILIKE :{key} AND "{column}" NOT ILIKE \'%debuff%\')')
         else:
             clauses.append(f'"{column}" ILIKE :{key}')
-
-        clauses.append(f'"{column}" ILIKE :{key}')
-
+            
     if not clauses:
-        return
-    
-    query += " AND ".join(clauses) + ";"
-
+        return None
+        
+    query = f"SELECT * FROM {table_name} WHERE " + " AND ".join(clauses) + ";"
     return text(query)
 
 def wrap_text(val, width=30):
