@@ -34,3 +34,6 @@ dev = [
 
 [tool.deptry]
 known_first_party = ["dnd_ingest", "dnd_app"]
+
+[tool.deptry.per_rule_ignores]
+DEP002 = ["psycopg2", "tabulate"]
