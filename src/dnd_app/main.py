@@ -1,6 +1,7 @@
 from dnd_app.db import get_engine
 from sqlalchemy import text
 import pandas as pd
+import textwrap
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
@@ -67,17 +68,29 @@ def get_query_for_table(table_name: str, cmd_dict: dict):
 
     return text(query)
 
+def wrap_text(val, width=30):
+    if pd.isna(val) or not isinstance(val, str):
+        return val
+    return "\n".join(textwrap.wrap(val, width=width))
+
 def main():
     print(f"Realms Unknown search interface\nExample cmd: 'effect:buff target:multi'")
+    
     while True:
         cmd = input("> ")
         cmd_dict = parse_cmd(cmd)
+
         with engine.connect() as conn:
             for table_name in TABLE_COLUMNS:
                 read_params = get_read_params_for_table(table_name, cmd_dict)
                 query = get_query_for_table(table_name, cmd_dict)
                 df = pd.read_sql(query, conn, params=read_params)
+
                 if not df.empty:
+                    for col in ["Effects", "Definition"]:
+                        if col in df.columns:
+                            df[col] = df[col].apply(wrap_text)
+
                     print(f"\n{query}")
                     print(df.to_markdown(index=False, tablefmt="simple_grid"))
 
